@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Study</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Header -->
+    <div class="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 py-4">
+            <div class="flex items-center gap-3">
+                <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                <h1 class="text-2xl font-bold">Bible Study</h1>
+            </div>
+            <div id="breadcrumb" class="flex items-center gap-2 mt-3 text-sm text-slate-300"></div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-slate-800 rounded-lg p-6 flex items-center gap-3">
+            <svg class="animate-spin h-6 w-6 text-amber-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Loading Bible content...</span>
+        </div>
+    </div>
+
+    <!-- API Key Setup Modal -->
+    <div id="api-setup-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-lg p-6 max-w-2xl w-full">
+            <h2 class="text-2xl font-bold mb-4 text-amber-400">Welcome! Setup Required</h2>
+            <p class="text-slate-300 mb-4">To access the full Bible, you need a free API key from API.Bible. It takes 2 minutes to set up:</p>
+            
+            <div class="bg-slate-900/50 rounded-lg p-4 mb-4 space-y-3 text-sm">
+                <div class="flex gap-3">
+                    <span class="text-amber-400 font-bold">1.</span>
+                    <div>
+                        <p class="text-slate-200">Go to <a href="https://scripture.api.bible/" target="_blank" class="text-blue-400 hover:underline">scripture.api.bible</a></p>
+                        <p class="text-slate-400">Click "Get Started" in the top right</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <span class="text-amber-400 font-bold">2.</span>
+                    <div>
+                        <p class="text-slate-200">Create a free account</p>
+                        <p class="text-slate-400">Sign up with your email (no credit card needed)</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <span class="text-amber-400 font-bold">3.</span>
+                    <div>
+                        <p class="text-slate-200">Go to "My Apps" and create a new app</p>
+                        <p class="text-slate-400">Give it any name (like "Bible Study")</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <span class="text-amber-400 font-bold">4.</span>
+                    <div>
+                        <p class="text-slate-200">Copy your API key</p>
+                        <p class="text-slate-400">It will look like a long string of letters and numbers</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <span class="text-amber-400 font-bold">5.</span>
+                    <div>
+                        <p class="text-slate-200">Paste it below and click "Save"</p>
+                    </div>
+                </div>
+            </div>
+
+            <input 
+                type="text" 
+                id="api-key-input" 
+                placeholder="Paste your API.Bible key here..." 
+                class="w-full bg-slate-900/50 text-slate-200 border border-slate-600/50 rounded-lg p-3 mb-4 focus:outline-none focus:border-amber-500"
+            >
+            
+            <div class="flex gap-3">
+                <button onclick="saveApiKey()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition-colors">
+                    Save & Start Studying
+                </button>
+                <button onclick="useDemoMode()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    Try Demo (Limited Content)
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400 mt-4">
+                Your API key is stored locally in your browser and never sent to anyone except API.Bible.
+            </p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Testament Selection -->
+        <div id="testament-selection" class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mt-12">
+            <button onclick="selectTestament('Old Testament')" class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white p-8 rounded-xl shadow-lg transition-all transform hover:scale-105">
+                <h2 class="text-2xl font-bold mb-2">Old Testament</h2>
+                <p class="text-amber-100">Hebrew Scriptures</p>
+            </button>
+            <button onclick="selectTestament('New Testament')" class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white p-8 rounded-xl shadow-lg transition-all transform hover:scale-105">
+                <h2 class="text-2xl font-bold mb-2">New Testament</h2>
+                <p class="text-blue-100">Greek Scriptures</p>
+            </button>
+        </div>
+
+        <!-- Book Selection -->
+        <div id="book-selection" class="hidden">
+            <button onclick="goBackToTestament()" class="text-amber-400 hover:text-amber-300 mb-4 flex items-center gap-2">
+                ← Back to Testament Selection
+            </button>
+            <div id="books-grid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        </div>
+
+        <!-- Chapter Selection -->
+        <div id="chapter-selection" class="hidden">
+            <button onclick="goBackToBooks()" class="text-amber-400 hover:text-amber-300 mb-4 flex items-center gap-2">
+                ← Back to Book Selection
+            </button>
+            <div id="chapters-grid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2"></div>
+        </div>
+
+        <!-- Chapter View -->
+        <div id="chapter-view" class="hidden">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <button onclick="goBackToChapters()" class="text-amber-400 hover:text-amber-300 flex items-center gap-2">
+                    ← Back to Chapter Selection
+                </button>
+                
+                <div class="flex flex-wrap gap-2 items-center">
+                    <div id="translation-selector" class="flex flex-wrap gap-2"></div>
+                    <button onclick="showApiSettings()" class="text-slate-400 hover:text-slate-300 text-sm">
+                        ⚙️ API Settings
+                    </button>
+                </div>
+            </div>
+
+            <div id="content-area"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        // Will use Netlify Function as backend proxy
+        const USE_NETLIFY = window.location.hostname !== ''; // Auto-detect if deployed
+        const NETLIFY_FUNCTION = '/.netlify/functions/bible-proxy';
+        
+        // Available Bible versions with their IDs
+        const BIBLE_VERSIONS = {
+            'KJV': 'de4e12af7f28f599-02', // King James Version
+            'WEB': '9879dbb7cfe39e4d-04', // World English Bible (free alternative)
+            'RVR09': '592420522e16049f-01', // Reina Valera 1909 (Spanish)
+        };
+
+        // State management
+        let state = {
+            apiKey: null,
+            selectedTestament: null,
+            selectedBook: null,
+            selectedChapter: null,
+            selectedVerse: null,
+            notes: {},
+            currentNote: '',
+            selectedTranslations: ['KJV', 'WEB'],
+            booksCache: {},
+            versesCache: {},
+            availableBooks: []
+        };
+
+        const translations = ['KJV', 'WEB', 'RVR09'];
+
+        // Check for API key on load
+        window.onload = function() {
+            const savedKey = localStorage.getItem('bible-api-key');
+            if (savedKey) {
+                state.apiKey = savedKey;
+                document.getElementById('api-setup-modal').style.display = 'none';
+                loadNotes();
+            } else {
+                document.getElementById('api-setup-modal').style.display = 'flex';
+            }
+        };
+
+        function saveApiKey() {
+            const input = document.getElementById('api-key-input');
+            const key = input.value.trim();
+            
+            if (!key) {
+                alert('Please enter an API key');
+                return;
+            }
+            
+            state.apiKey = key;
+            localStorage.setItem('bible-api-key', key);
+            document.getElementById('api-setup-modal').style.display = 'none';
+            loadNotes();
+        }
+
+        function useDemoMode() {
+            alert('Demo mode uses sample verses only (Genesis 1, John 1). To access the full Bible, you need a free API key from scripture.api.bible');
+            document.getElementById('api-setup-modal').style.display = 'none';
+            state.apiKey = 'demo';
+            loadNotes();
+        }
+
+        function showApiSettings() {
+            const newKey = prompt('Enter your API.Bible key (or leave blank to clear):', state.apiKey === 'demo' ? '' : state.apiKey);
+            if (newKey !== null) {
+                if (newKey.trim()) {
+                    state.apiKey = newKey.trim();
+                    localStorage.setItem('bible-api-key', state.apiKey);
+                    alert('API key updated! Reload the page to use it.');
+                } else {
+                    localStorage.removeItem('bible-api-key');
+                    alert('API key removed. Reload the page to enter a new one.');
+                }
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        // API Functions
+        async function apiFetch(endpoint) {
+            if (state.apiKey === 'demo') {
+                return null; // Return null for demo mode
+            }
+
+            try {
+                // Use Netlify Function as proxy
+                const url = `${NETLIFY_FUNCTION}?apiKey=${encodeURIComponent(state.apiKey)}&endpoint=${encodeURIComponent(endpoint)}`;
+                
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.data;
+            } catch (error) {
+                console.error('API Error:', error);
+                alert('Error loading Bible content. Please check your internet connection and API key.');
+                return null;
+            }
+        }
+
+        async function getBooks(bibleId) {
+            if (state.booksCache[bibleId]) {
+                return state.booksCache[bibleId];
+            }
+
+            const books = await apiFetch(`/bibles/${bibleId}/books`);
+            if (books) {
+                state.booksCache[bibleId] = books;
+            }
+            return books;
+        }
+
+        async function getChapters(bibleId, bookId) {
+            const chapters = await apiFetch(`/bibles/${bibleId}/books/${bookId}/chapters`);
+            return chapters;
+        }
+
+        async function getVerses(bibleId, chapterId) {
+            const cacheKey = `${bibleId}-${chapterId}`;
+            if (state.versesCache[cacheKey]) {
+                return state.versesCache[cacheKey];
+            }
+
+            const verses = await apiFetch(`/bibles/${bibleId}/chapters/${chapterId}/verses`);
+            if (verses) {
+                state.versesCache[cacheKey] = verses;
+            }
+            return verses;
+        }
+
+        async function getVerseContent(bibleId, verseId) {
+            const verse = await apiFetch(`/bibles/${bibleId}/verses/${verseId}?content-type=text`);
+            return verse;
+        }
+
+        // Demo data fallback
+        const demoVerses = {
+            'John-1': {
+                1: {
+                    KJV: 'In the beginning was the Word, and the Word was with God, and the Word was God.',
+                    WEB: 'In the beginning was the Word, and the Word was with God, and the Word was God.',
+                    RVR09: 'EN el principio era el Verbo, y el Verbo era con Dios, y el Verbo era Dios.',
+                },
+                2: {
+                    KJV: 'The same was in the beginning with God.',
+                    WEB: 'The same was in the beginning with God.',
+                    RVR09: 'Este era en el principio con Dios.',
+                },
+                3: {
+                    KJV: 'All things were made by him; and without him was not any thing made that was made.',
+                    WEB: 'All things were made through him. Without him, nothing was made that has been made.',
+                    RVR09: 'Todas las cosas por él fueron hechas; y sin él nada de lo que es hecho, fué hecho.',
+                }
+            },
+            'Genesis-1': {
+                1: {
+                    KJV: 'In the beginning God created the heaven and the earth.',
+                    WEB: 'In the beginning, God created the heavens and the earth.',
+                    RVR09: 'EN el principio crió Dios los cielos y la tierra.',
+                },
+                2: {
+                    KJV: 'And the earth was without form, and void; and darkness was upon the face of the deep.',
+                    WEB: 'The earth was formless and empty. Darkness was on the surface of the deep and God\'s Spirit was hovering over the surface of the waters.',
+                    RVR09: 'Y la tierra estaba desordenada y vacía, y las tinieblas estaban sobre la haz del abismo.',
+                }
+            }
+        };
+
+        // Load notes from localStorage
+        function loadNotes() {
+            const saved = localStorage.getItem('bible-notes');
+            if (saved) {
+                state.notes = JSON.parse(saved);
+            }
+        }
+
+        // Save notes to localStorage
+        function saveNotes() {
+            localStorage.setItem('bible-notes', JSON.stringify(state.notes));
+        }
+
+        // Update breadcrumb
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            let html = '';
+            
+            if (state.selectedTestament) {
+                html += `<span class="text-amber-400">${state.selectedTestament}</span>`;
+                
+                if (state.selectedBook) {
+                    html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+                    html += `<span class="text-amber-400">${state.selectedBook.name || state.selectedBook}</span>`;
+                    
+                    if (state.selectedChapter) {
+                        html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+                        html += `<span class="text-amber-400">Chapter ${state.selectedChapter.number || state.selectedChapter}</span>`;
+                    }
+                }
+            }
+            
+            breadcrumb.innerHTML = html;
+        }
+
+        // Testament selection
+        async function selectTestament(testament) {
+            state.selectedTestament = testament;
+            document.getElementById('testament-selection').classList.add('hidden');
+            document.getElementById('book-selection').classList.remove('hidden');
+            updateBreadcrumb();
+            await renderBooks();
+        }
+
+        function goBackToTestament() {
+            state.selectedTestament = null;
+            state.selectedBook = null;
+            document.getElementById('book-selection').classList.add('hidden');
+            document.getElementById('testament-selection').classList.remove('hidden');
+            updateBreadcrumb();
+        }
+
+        // Book selection
+        async function renderBooks() {
+            const grid = document.getElementById('books-grid');
+            
+            if (state.apiKey === 'demo') {
+                // Demo mode - show limited books
+                const demoBooks = state.selectedTestament === 'Old Testament' 
+                    ? [{ name: 'Genesis', id: 'GEN', chapters: 50 }]
+                    : [{ name: 'John', id: 'JHN', chapters: 21 }];
+                
+                grid.innerHTML = demoBooks.map(book => `
+                    <button onclick='selectBook(${JSON.stringify(book)})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-4 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50">
+                        <div class="font-semibold">${book.name}</div>
+                        <div class="text-sm text-slate-400">${book.chapters} chapters</div>
+                    </button>
+                `).join('');
+                return;
+            }
+
+            showLoading();
+            
+            // Get books from first available translation
+            const bibleId = BIBLE_VERSIONS[state.selectedTranslations[0]] || BIBLE_VERSIONS.KJV;
+            const books = await getBooks(bibleId);
+            
+            hideLoading();
+
+            if (!books) {
+                grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-8">Unable to load books. Please check your API key.</div>';
+                return;
+            }
+
+            // Filter by testament
+            const isOT = state.selectedTestament === 'Old Testament';
+            const filteredBooks = books.filter(book => {
+                // Old Testament books come before Matthew (MAT)
+                return isOT ? book.id < 'MAT' : book.id >= 'MAT';
+            });
+
+            state.availableBooks = filteredBooks;
+
+            grid.innerHTML = filteredBooks.map(book => `
+                <button onclick='selectBook(${JSON.stringify(book).replace(/'/g, "&#39;")})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-4 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50">
+                    <div class="font-semibold">${book.name}</div>
+                    <div class="text-sm text-slate-400">Click to view</div>
+                </button>
+            `).join('');
+        }
+
+        async function selectBook(book) {
+            state.selectedBook = book;
+            document.getElementById('book-selection').classList.add('hidden');
+            document.getElementById('chapter-selection').classList.remove('hidden');
+            updateBreadcrumb();
+            await renderChapters();
+        }
+
+        function goBackToBooks() {
+            state.selectedBook = null;
+            state.selectedChapter = null;
+            document.getElementById('chapter-selection').classList.add('hidden');
+            document.getElementById('book-selection').classList.remove('hidden');
+            updateBreadcrumb();
+        }
+
+        // Chapter selection
+        async function renderChapters() {
+            const grid = document.getElementById('chapters-grid');
+
+            if (state.apiKey === 'demo') {
+                const chapterCount = state.selectedBook.chapters || 21;
+                const chapters = Array.from({ length: chapterCount }, (_, i) => ({ number: i + 1, id: `${state.selectedBook.id}.${i + 1}` }));
+                
+                grid.innerHTML = chapters.map(chapter => `
+                    <button onclick='selectChapter(${JSON.stringify(chapter)})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-3 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50 font-semibold">
+                        ${chapter.number}
+                    </button>
+                `).join('');
+                return;
+            }
+
+            showLoading();
+
+            const bibleId = BIBLE_VERSIONS[state.selectedTranslations[0]] || BIBLE_VERSIONS.KJV;
+            const chapters = await getChapters(bibleId, state.selectedBook.id);
+
+            hideLoading();
+
+            if (!chapters) {
+                grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-8">Unable to load chapters.</div>';
+                return;
+            }
+
+            grid.innerHTML = chapters.map(chapter => `
+                <button onclick='selectChapter(${JSON.stringify(chapter).replace(/'/g, "&#39;")})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-3 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50 font-semibold">
+                    ${chapter.number}
+                </button>
+            `).join('');
+        }
+
+        async function selectChapter(chapter) {
+            state.selectedChapter = chapter;
+            state.selectedVerse = null;
+            document.getElementById('chapter-selection').classList.add('hidden');
+            document.getElementById('chapter-view').classList.remove('hidden');
+            updateBreadcrumb();
+            renderTranslationSelector();
+            await renderVerses();
+        }
+
+        function goBackToChapters() {
+            state.selectedChapter = null;
+            state.selectedVerse = null;
+            document.getElementById('chapter-view').classList.add('hidden');
+            document.getElementById('chapter-selection').classList.remove('hidden');
+            updateBreadcrumb();
+        }
+
+        // Translation selector
+        function renderTranslationSelector() {
+            const selector = document.getElementById('translation-selector');
+            const translationNames = {
+                'KJV': 'KJV (English)',
+                'WEB': 'WEB (English)',
+                'RVR09': 'RVR09 (Español)'
+            };
+            
+            selector.innerHTML = translations.map(trans => `
+                <button onclick="toggleTranslation('${trans}')" class="px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                    state.selectedTranslations.includes(trans)
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                }">
+                    ${translationNames[trans]}
+                </button>
+            `).join('');
+        }
+
+        function toggleTranslation(translation) {
+            if (state.selectedTranslations.includes(translation)) {
+                if (state.selectedTranslations.length > 1) {
+                    state.selectedTranslations = state.selectedTranslations.filter(t => t !== translation);
+                }
+            } else {
+                state.selectedTranslations.push(translation);
+            }
+            renderTranslationSelector();
+            renderVerses();
+        }
+
+        // Verses rendering
+        async function renderVerses() {
+            const contentArea = document.getElementById('content-area');
+
+            // Check for demo mode
+            if (state.apiKey === 'demo') {
+                const bookChapterKey = `${state.selectedBook.name}-${state.selectedChapter.number}`;
+                const verses = demoVerses[bookChapterKey] || {};
+                renderDemoVerses(verses);
+                return;
+            }
+
+            showLoading();
+
+            // Fetch verses for each selected translation
+            const versesByTranslation = {};
+            
+            for (const trans of state.selectedTranslations) {
+                const bibleId = BIBLE_VERSIONS[trans];
+                const verses = await getVerses(bibleId, state.selectedChapter.id);
+                
+                if (verses) {
+                    versesByTranslation[trans] = verses;
+                }
+            }
+
+            hideLoading();
+
+            // Organize verses by number
+            const firstTrans = state.selectedTranslations[0];
+            const firstVerses = versesByTranslation[firstTrans];
+
+            if (!firstVerses || firstVerses.length === 0) {
+                contentArea.innerHTML = `
+                    <div class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-8 text-center text-slate-400">
+                        <p>No verses found for this chapter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const organizedVerses = {};
+            
+            for (const verse of firstVerses) {
+                const verseNum = verse.number || verse.id.split('.').pop();
+                organizedVerses[verseNum] = {};
+                
+                for (const trans of state.selectedTranslations) {
+                    const transVerses = versesByTranslation[trans];
+                    const matchingVerse = transVerses?.find(v => {
+                        const vNum = v.number || v.id.split('.').pop();
+                        return vNum === verseNum;
+                    });
+                    
+                    if (matchingVerse) {
+                        organizedVerses[verseNum][trans] = matchingVerse.content || matchingVerse.text || '';
+                    }
+                }
+            }
+
+            renderVerseContent(organizedVerses);
+        }
+
+        function renderDemoVerses(verses) {
+            const contentArea = document.getElementById('content-area');
+            
+            if (Object.keys(verses).length === 0) {
+                contentArea.innerHTML = `
+                    <div class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-8 text-center text-slate-400">
+                        <p>This chapter's content is only available with an API key.</p>
+                        <p class="text-sm mt-2">Demo data available for Genesis 1 and John 1</p>
+                        <button onclick="showApiSettings()" class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">
+                            Setup API Key
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            renderVerseContent(verses);
+        }
+
+        function renderVerseContent(verses) {
+            const contentArea = document.getElementById('content-area');
+
+            contentArea.innerHTML = `
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 space-y-4" id="verses-container"></div>
+                    <div class="lg:col-span-1">
+                        <div id="notes-panel" class="bg-slate-800/50 border rounded-lg p-4 sticky top-24 transition-all ${
+                            state.selectedVerse ? 'border-amber-500' : 'border-slate-700/50'
+                        }">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-white font-semibold flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                    </svg>
+                                    Notes
+                                </h3>
+                                ${state.selectedVerse ? `<span class="text-amber-400 text-sm">Verse ${state.selectedVerse}</span>` : ''}
+                            </div>
+                            ${state.selectedVerse ? `
+                                <textarea id="note-textarea" class="w-full h-64 bg-slate-900/50 text-slate-200 border border-slate-600/50 rounded-lg p-3 resize-none focus:outline-none focus:border-amber-500 transition-colors" placeholder="Write your notes here...">${state.currentNote}</textarea>
+                                <button onclick="saveNote()" class="w-full mt-3 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg font-medium transition-colors">Save Note</button>
+                            ` : `
+                                <div class="text-slate-400 text-center py-12">Click on a verse to add notes</div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const versesContainer = document.getElementById('verses-container');
+
+            versesContainer.innerHTML = Object.keys(verses).map(verseNum => {
+                const bookName = state.selectedBook.name || state.selectedBook;
+                const chapterNum = state.selectedChapter.number || state.selectedChapter;
+                const verseKey = `${bookName}-${chapterNum}-${verseNum}`;
+                const hasNotes = state.notes[verseKey];
+                
+                return `
+                    <div onclick="selectVerse(${verseNum})" class="bg-slate-800/50 border rounded-lg p-4 transition-all cursor-pointer ${
+                        state.selectedVerse === parseInt(verseNum)
+                            ? 'border-amber-500 shadow-lg shadow-amber-500/20'
+                            : 'border-slate-700/50 hover:border-slate-600'
+                    }">
+                        <div class="flex items-start gap-3">
+                            <span class="text-amber-400 font-bold text-lg flex-shrink-0 mt-1">${verseNum}</span>
+                            <div class="flex-1 space-y-3">
+                                ${state.selectedTranslations.map(trans => {
+                                    const transNames = {
+                                        'KJV': 'KJV',
+                                        'WEB': 'WEB',
+                                        'RVR09': 'RVR09'
+                                    };
+                                    const content = verses[verseNum][trans] || 'Loading...';
+                                    // Clean up HTML tags from API content
+                                    const cleanContent = content.replace(/<[^>]*>/g, '');
+                                    
+                                    return `
+                                        <div>
+                                            <div class="text-xs text-slate-400 mb-1 font-semibold">${transNames[trans]}</div>
+                                            <div class="text-slate-200 leading-relaxed">${cleanContent}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                                
+                                ${hasNotes ? `
+                                    <div class="mt-2 flex items-center gap-2 text-amber-400 text-sm">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                        </svg>
+                                        <span>Notes saved</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectVerse(verseNum) {
+            state.selectedVerse = verseNum;
+            const bookName = state.selectedBook.name || state.selectedBook;
+            const chapterNum = state.selectedChapter.number || state.selectedChapter;
+            const verseKey = `${bookName}-${chapterNum}-${verseNum}`;
+            state.currentNote = state.notes[verseKey] || '';
+            renderVerses();
+        }
+
+        function saveNote() {
+            const textarea = document.getElementById('note-textarea');
+            if (textarea) {
+                state.currentNote = textarea.value;
+                const bookName = state.selectedBook.name || state.selectedBook;
+                const chapterNum = state.selectedChapter.number || state.selectedChapter;
+                const verseKey = `${bookName}-${chapterNum}-${state.selectedVerse}`;
+                state.notes[verseKey] = state.currentNote;
+                saveNotes();
+                renderVerses();
+            }
+        }
+    </script>
+</body>
+</html>
