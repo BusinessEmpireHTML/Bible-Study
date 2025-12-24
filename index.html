@@ -37,70 +37,7 @@
         </div>
     </div>
 
-    <!-- API Key Setup Modal -->
-    <div id="api-setup-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div class="bg-slate-800 rounded-lg p-6 max-w-2xl w-full">
-            <h2 class="text-2xl font-bold mb-4 text-amber-400">Welcome! Setup Required</h2>
-            <p class="text-slate-300 mb-4">To access the full Bible, you need a free API key from API.Bible. It takes 2 minutes to set up:</p>
-            
-            <div class="bg-slate-900/50 rounded-lg p-4 mb-4 space-y-3 text-sm">
-                <div class="flex gap-3">
-                    <span class="text-amber-400 font-bold">1.</span>
-                    <div>
-                        <p class="text-slate-200">Go to <a href="https://scripture.api.bible/" target="_blank" class="text-blue-400 hover:underline">scripture.api.bible</a></p>
-                        <p class="text-slate-400">Click "Get Started" in the top right</p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <span class="text-amber-400 font-bold">2.</span>
-                    <div>
-                        <p class="text-slate-200">Create a free account</p>
-                        <p class="text-slate-400">Sign up with your email (no credit card needed)</p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <span class="text-amber-400 font-bold">3.</span>
-                    <div>
-                        <p class="text-slate-200">Go to "My Apps" and create a new app</p>
-                        <p class="text-slate-400">Give it any name (like "Bible Study")</p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <span class="text-amber-400 font-bold">4.</span>
-                    <div>
-                        <p class="text-slate-200">Copy your API key</p>
-                        <p class="text-slate-400">It will look like a long string of letters and numbers</p>
-                    </div>
-                </div>
-                <div class="flex gap-3">
-                    <span class="text-amber-400 font-bold">5.</span>
-                    <div>
-                        <p class="text-slate-200">Paste it below and click "Save"</p>
-                    </div>
-                </div>
-            </div>
 
-            <input 
-                type="text" 
-                id="api-key-input" 
-                placeholder="Paste your API.Bible key here..." 
-                class="w-full bg-slate-900/50 text-slate-200 border border-slate-600/50 rounded-lg p-3 mb-4 focus:outline-none focus:border-amber-500"
-            >
-            
-            <div class="flex gap-3">
-                <button onclick="saveApiKey()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition-colors">
-                    Save & Start Studying
-                </button>
-                <button onclick="useDemoMode()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                    Try Demo (Limited Content)
-                </button>
-            </div>
-            
-            <p class="text-xs text-slate-400 mt-4">
-                Your API key is stored locally in your browser and never sent to anyone except API.Bible.
-            </p>
-        </div>
-    </div>
 
     <div class="max-w-7xl mx-auto px-4 py-6">
         <!-- Testament Selection -->
@@ -140,9 +77,6 @@
                 
                 <div class="flex flex-wrap gap-2 items-center">
                     <div id="translation-selector" class="flex flex-wrap gap-2"></div>
-                    <button onclick="showApiSettings()" class="text-slate-400 hover:text-slate-300 text-sm">
-                        ⚙️ API Settings
-                    </button>
                 </div>
             </div>
 
@@ -180,53 +114,12 @@
 
         const translations = ['KJV', 'WEB', 'RVR09'];
 
-        // Check for API key on load
+        // Check for API key on load - now using backend
         window.onload = function() {
-            const savedKey = localStorage.getItem('bible-api-key');
-            if (savedKey) {
-                state.apiKey = savedKey;
-                document.getElementById('api-setup-modal').style.display = 'none';
-                loadNotes();
-            } else {
-                document.getElementById('api-setup-modal').style.display = 'flex';
-            }
+            // API key is now stored in Netlify environment variables
+            state.apiKey = 'backend'; // Just a flag to indicate we're using backend
+            loadNotes();
         };
-
-        function saveApiKey() {
-            const input = document.getElementById('api-key-input');
-            const key = input.value.trim();
-            
-            if (!key) {
-                alert('Please enter an API key');
-                return;
-            }
-            
-            state.apiKey = key;
-            localStorage.setItem('bible-api-key', key);
-            document.getElementById('api-setup-modal').style.display = 'none';
-            loadNotes();
-        }
-
-        function useDemoMode() {
-            alert('Demo mode uses sample verses only (Genesis 1, John 1). To access the full Bible, you need a free API key from scripture.api.bible');
-            document.getElementById('api-setup-modal').style.display = 'none';
-            state.apiKey = 'demo';
-            loadNotes();
-        }
-
-        function showApiSettings() {
-            const newKey = prompt('Enter your API.Bible key (or leave blank to clear):', state.apiKey === 'demo' ? '' : state.apiKey);
-            if (newKey !== null) {
-                if (newKey.trim()) {
-                    state.apiKey = newKey.trim();
-                    localStorage.setItem('bible-api-key', state.apiKey);
-                    alert('API key updated! Reload the page to use it.');
-                } else {
-                    localStorage.removeItem('bible-api-key');
-                    alert('API key removed. Reload the page to enter a new one.');
-                }
-            }
-        }
 
         function showLoading() {
             document.getElementById('loading').classList.remove('hidden');
@@ -238,25 +131,22 @@
 
         // API Functions
         async function apiFetch(endpoint) {
-            if (state.apiKey === 'demo') {
-                return null; // Return null for demo mode
-            }
-
             try {
-                // Use Netlify Function as proxy
-                const url = `${NETLIFY_FUNCTION}?apiKey=${encodeURIComponent(state.apiKey)}&endpoint=${encodeURIComponent(endpoint)}`;
+                // Use Netlify Function as proxy (API key is stored in backend)
+                const url = `/.netlify/functions/bible-proxy?endpoint=${encodeURIComponent(endpoint)}`;
                 
                 const response = await fetch(url);
 
                 if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `API Error: ${response.status}`);
                 }
 
                 const data = await response.json();
                 return data.data;
             } catch (error) {
                 console.error('API Error:', error);
-                alert('Error loading Bible content. Please check your internet connection and API key.');
+                alert(`Error loading Bible content: ${error.message}`);
                 return null;
             }
         }
@@ -385,21 +275,6 @@
         async function renderBooks() {
             const grid = document.getElementById('books-grid');
             
-            if (state.apiKey === 'demo') {
-                // Demo mode - show limited books
-                const demoBooks = state.selectedTestament === 'Old Testament' 
-                    ? [{ name: 'Genesis', id: 'GEN', chapters: 50 }]
-                    : [{ name: 'John', id: 'JHN', chapters: 21 }];
-                
-                grid.innerHTML = demoBooks.map(book => `
-                    <button onclick='selectBook(${JSON.stringify(book)})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-4 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50">
-                        <div class="font-semibold">${book.name}</div>
-                        <div class="text-sm text-slate-400">${book.chapters} chapters</div>
-                    </button>
-                `).join('');
-                return;
-            }
-
             showLoading();
             
             // Get books from first available translation
@@ -449,18 +324,6 @@
         // Chapter selection
         async function renderChapters() {
             const grid = document.getElementById('chapters-grid');
-
-            if (state.apiKey === 'demo') {
-                const chapterCount = state.selectedBook.chapters || 21;
-                const chapters = Array.from({ length: chapterCount }, (_, i) => ({ number: i + 1, id: `${state.selectedBook.id}.${i + 1}` }));
-                
-                grid.innerHTML = chapters.map(chapter => `
-                    <button onclick='selectChapter(${JSON.stringify(chapter)})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-3 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50 font-semibold">
-                        ${chapter.number}
-                    </button>
-                `).join('');
-                return;
-            }
 
             showLoading();
 
@@ -534,14 +397,6 @@
         // Verses rendering
         async function renderVerses() {
             const contentArea = document.getElementById('content-area');
-
-            // Check for demo mode
-            if (state.apiKey === 'demo') {
-                const bookChapterKey = `${state.selectedBook.name}-${state.selectedChapter.number}`;
-                const verses = demoVerses[bookChapterKey] || {};
-                renderDemoVerses(verses);
-                return;
-            }
 
             showLoading();
 
