@@ -1,5 +1,5 @@
+// Using Bible API - completely free, no API key needed
 exports.handler = async (event, context) => {
-  // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -7,16 +7,10 @@ exports.handler = async (event, context) => {
     'Content-Type': 'application/json'
   };
 
-  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: ''
-    };
+    return { statusCode: 200, headers, body: '' };
   }
 
-  // Only allow GET requests
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
@@ -25,71 +19,44 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Get the API key from environment variable
-  const apiKey = process.env.BIBLE_API_KEY;
-  
-  console.log('API Key exists:', !!apiKey);
-  console.log('API Key length:', apiKey ? apiKey.length : 0);
-  
-  if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ 
-        error: 'API key not configured. Please set BIBLE_API_KEY in Netlify environment variables.',
-        debug: {
-          envVars: Object.keys(process.env).filter(k => k.includes('BIBLE'))
-        }
-      })
-    };
-  }
+  const { version, book, chapter } = event.queryStringParameters || {};
 
-  // Get the endpoint from query parameters
-  const { endpoint } = event.queryStringParameters || {};
-
-  if (!endpoint) {
+  if (!book || !chapter) {
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: 'Missing endpoint parameter' })
+      body: JSON.stringify({ error: 'Missing book or chapter parameter' })
     };
   }
 
-  const apiUrl = `https://api.scripture.api.bible/v1${endpoint}`;
-  console.log('Fetching:', apiUrl);
-
   try {
-    // Make the request to API.Bible
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'api-key': apiKey.trim(),
-        'accept': 'application/json'
-      }
-    });
-
-    console.log('API Response Status:', response.status);
+    // Fetch from Bible API (supports KJV, WEB, and more)
+    const versionMap = {
+      'KJV': 'kjv',
+      'WEB': 'web',
+      'BBE': 'bbe' // Bible in Basic English as alternative
+    };
+    
+    const apiVersion = versionMap[version] || 'kjv';
+    const url = `https://bible-api.com/${book}+${chapter}?translation=${apiVersion}`;
+    
+    console.log('Fetching:', url);
+    
+    const response = await fetch(url);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('API.Bible error:', response.status, errorText);
-      
+      console.error('Bible API error:', response.status, errorText);
       return {
         statusCode: response.status,
         headers,
-        body: JSON.stringify({ 
-          error: `API Error: ${response.status}`,
-          details: errorText,
-          url: apiUrl,
-          keyLength: apiKey.length
-        })
+        body: JSON.stringify({ error: `API Error: ${response.status}`, details: errorText })
       };
     }
 
     const data = await response.json();
-    console.log('API Success:', !!data);
+    console.log('API Success');
 
-    // Return the data
     return {
       statusCode: 200,
       headers,
@@ -100,10 +67,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ 
-        error: error.message,
-        stack: error.stack
-      })
+      body: JSON.stringify({ error: error.message })
     };
   }
 };
