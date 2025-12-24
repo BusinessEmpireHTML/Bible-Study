@@ -25,14 +25,22 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Get the API key from environment variable (set in Netlify dashboard)
+  // Get the API key from environment variable
   const apiKey = process.env.BIBLE_API_KEY;
+  
+  console.log('API Key exists:', !!apiKey);
+  console.log('API Key length:', apiKey ? apiKey.length : 0);
   
   if (!apiKey) {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'API key not configured. Please set BIBLE_API_KEY in Netlify environment variables.' })
+      body: JSON.stringify({ 
+        error: 'API key not configured. Please set BIBLE_API_KEY in Netlify environment variables.',
+        debug: {
+          envVars: Object.keys(process.env).filter(k => k.includes('BIBLE'))
+        }
+      })
     };
   }
 
@@ -47,25 +55,39 @@ exports.handler = async (event, context) => {
     };
   }
 
+  const apiUrl = `https://api.scripture.api.bible/v1${endpoint}`;
+  console.log('Fetching:', apiUrl);
+
   try {
     // Make the request to API.Bible
-    const response = await fetch(`https://api.scripture.api.bible/v1${endpoint}`, {
+    const response = await fetch(apiUrl, {
+      method: 'GET',
       headers: {
-        'api-key': apiKey
+        'api-key': apiKey.trim(),
+        'accept': 'application/json'
       }
     });
+
+    console.log('API Response Status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API.Bible error:', response.status, errorText);
+      
       return {
         statusCode: response.status,
         headers,
-        body: JSON.stringify({ error: `API Error: ${response.status}`, details: errorText })
+        body: JSON.stringify({ 
+          error: `API Error: ${response.status}`,
+          details: errorText,
+          url: apiUrl,
+          keyLength: apiKey.length
+        })
       };
     }
 
     const data = await response.json();
+    console.log('API Success:', !!data);
 
     // Return the data
     return {
@@ -78,7 +100,10 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: error.message,
+        stack: error.stack
+      })
     };
   }
 };
