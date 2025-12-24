@@ -37,8 +37,6 @@
         </div>
     </div>
 
-
-
     <div class="max-w-7xl mx-auto px-4 py-6">
         <!-- Testament Selection -->
         <div id="testament-selection" class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mt-12">
@@ -85,21 +83,11 @@
     </div>
 
     <script>
-        // Configuration
-        // Will use Netlify Function as backend proxy
-        const USE_NETLIFY = window.location.hostname !== ''; // Auto-detect if deployed
-        const NETLIFY_FUNCTION = '/.netlify/functions/bible-proxy';
-        
-        // Available Bible versions with their IDs
-        const BIBLE_VERSIONS = {
-            'KJV': 'de4e12af7f28f599-02', // King James Version
-            'WEB': '9879dbb7cfe39e4d-04', // World English Bible (free alternative)
-            'RVR09': '592420522e16049f-01', // Reina Valera 1909 (Spanish)
-        };
+        // Using Bible-API.com - completely free, no API key needed
+        const translations = ['KJV', 'WEB', 'BBE'];
 
         // State management
         let state = {
-            apiKey: null,
             selectedTestament: null,
             selectedBook: null,
             selectedChapter: null,
@@ -107,17 +95,83 @@
             notes: {},
             currentNote: '',
             selectedTranslations: ['KJV', 'WEB'],
-            booksCache: {},
-            versesCache: {},
-            availableBooks: []
+            versesCache: {}
         };
 
-        const translations = ['KJV', 'WEB', 'RVR09'];
+        // Bible books with their abbreviations
+        const oldTestament = [
+            { name: 'Genesis', id: 'Genesis', chapters: 50 },
+            { name: 'Exodus', id: 'Exodus', chapters: 40 },
+            { name: 'Leviticus', id: 'Leviticus', chapters: 27 },
+            { name: 'Numbers', id: 'Numbers', chapters: 36 },
+            { name: 'Deuteronomy', id: 'Deuteronomy', chapters: 34 },
+            { name: 'Joshua', id: 'Joshua', chapters: 24 },
+            { name: 'Judges', id: 'Judges', chapters: 21 },
+            { name: 'Ruth', id: 'Ruth', chapters: 4 },
+            { name: '1 Samuel', id: '1Samuel', chapters: 31 },
+            { name: '2 Samuel', id: '2Samuel', chapters: 24 },
+            { name: '1 Kings', id: '1Kings', chapters: 22 },
+            { name: '2 Kings', id: '2Kings', chapters: 25 },
+            { name: '1 Chronicles', id: '1Chronicles', chapters: 29 },
+            { name: '2 Chronicles', id: '2Chronicles', chapters: 36 },
+            { name: 'Ezra', id: 'Ezra', chapters: 10 },
+            { name: 'Nehemiah', id: 'Nehemiah', chapters: 13 },
+            { name: 'Esther', id: 'Esther', chapters: 10 },
+            { name: 'Job', id: 'Job', chapters: 42 },
+            { name: 'Psalms', id: 'Psalms', chapters: 150 },
+            { name: 'Proverbs', id: 'Proverbs', chapters: 31 },
+            { name: 'Ecclesiastes', id: 'Ecclesiastes', chapters: 12 },
+            { name: 'Song of Solomon', id: 'SongofSolomon', chapters: 8 },
+            { name: 'Isaiah', id: 'Isaiah', chapters: 66 },
+            { name: 'Jeremiah', id: 'Jeremiah', chapters: 52 },
+            { name: 'Lamentations', id: 'Lamentations', chapters: 5 },
+            { name: 'Ezekiel', id: 'Ezekiel', chapters: 48 },
+            { name: 'Daniel', id: 'Daniel', chapters: 12 },
+            { name: 'Hosea', id: 'Hosea', chapters: 14 },
+            { name: 'Joel', id: 'Joel', chapters: 3 },
+            { name: 'Amos', id: 'Amos', chapters: 9 },
+            { name: 'Obadiah', id: 'Obadiah', chapters: 1 },
+            { name: 'Jonah', id: 'Jonah', chapters: 4 },
+            { name: 'Micah', id: 'Micah', chapters: 7 },
+            { name: 'Nahum', id: 'Nahum', chapters: 3 },
+            { name: 'Habakkuk', id: 'Habakkuk', chapters: 3 },
+            { name: 'Zephaniah', id: 'Zephaniah', chapters: 3 },
+            { name: 'Haggai', id: 'Haggai', chapters: 2 },
+            { name: 'Zechariah', id: 'Zechariah', chapters: 14 },
+            { name: 'Malachi', id: 'Malachi', chapters: 4 }
+        ];
 
-        // Check for API key on load - now using backend
+        const newTestament = [
+            { name: 'Matthew', id: 'Matthew', chapters: 28 },
+            { name: 'Mark', id: 'Mark', chapters: 16 },
+            { name: 'Luke', id: 'Luke', chapters: 24 },
+            { name: 'John', id: 'John', chapters: 21 },
+            { name: 'Acts', id: 'Acts', chapters: 28 },
+            { name: 'Romans', id: 'Romans', chapters: 16 },
+            { name: '1 Corinthians', id: '1Corinthians', chapters: 16 },
+            { name: '2 Corinthians', id: '2Corinthians', chapters: 13 },
+            { name: 'Galatians', id: 'Galatians', chapters: 6 },
+            { name: 'Ephesians', id: 'Ephesians', chapters: 6 },
+            { name: 'Philippians', id: 'Philippians', chapters: 4 },
+            { name: 'Colossians', id: 'Colossians', chapters: 4 },
+            { name: '1 Thessalonians', id: '1Thessalonians', chapters: 5 },
+            { name: '2 Thessalonians', id: '2Thessalonians', chapters: 3 },
+            { name: '1 Timothy', id: '1Timothy', chapters: 6 },
+            { name: '2 Timothy', id: '2Timothy', chapters: 4 },
+            { name: 'Titus', id: 'Titus', chapters: 3 },
+            { name: 'Philemon', id: 'Philemon', chapters: 1 },
+            { name: 'Hebrews', id: 'Hebrews', chapters: 13 },
+            { name: 'James', id: 'James', chapters: 5 },
+            { name: '1 Peter', id: '1Peter', chapters: 5 },
+            { name: '2 Peter', id: '2Peter', chapters: 3 },
+            { name: '1 John', id: '1John', chapters: 5 },
+            { name: '2 John', id: '2John', chapters: 1 },
+            { name: '3 John', id: '3John', chapters: 1 },
+            { name: 'Jude', id: 'Jude', chapters: 1 },
+            { name: 'Revelation', id: 'Revelation', chapters: 22 }
+        ];
+
         window.onload = function() {
-            // API key is now stored in Netlify environment variables
-            state.apiKey = 'backend'; // Just a flag to indicate we're using backend
             loadNotes();
         };
 
@@ -130,94 +184,28 @@
         }
 
         // API Functions
-        async function apiFetch(endpoint) {
-            try {
-                // Use Netlify Function as proxy (API key is stored in backend)
-                const url = `/.netlify/functions/bible-proxy?endpoint=${encodeURIComponent(endpoint)}`;
-                
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `API Error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                return data.data;
-            } catch (error) {
-                console.error('API Error:', error);
-                alert(`Error loading Bible content: ${error.message}`);
-                return null;
-            }
-        }
-
-        async function getBooks(bibleId) {
-            if (state.booksCache[bibleId]) {
-                return state.booksCache[bibleId];
-            }
-
-            const books = await apiFetch(`/bibles/${bibleId}/books`);
-            if (books) {
-                state.booksCache[bibleId] = books;
-            }
-            return books;
-        }
-
-        async function getChapters(bibleId, bookId) {
-            const chapters = await apiFetch(`/bibles/${bibleId}/books/${bookId}/chapters`);
-            return chapters;
-        }
-
-        async function getVerses(bibleId, chapterId) {
-            const cacheKey = `${bibleId}-${chapterId}`;
+        async function fetchVerses(book, chapter, version) {
+            const cacheKey = `${book}-${chapter}-${version}`;
             if (state.versesCache[cacheKey]) {
                 return state.versesCache[cacheKey];
             }
 
-            const verses = await apiFetch(`/bibles/${bibleId}/chapters/${chapterId}/verses`);
-            if (verses) {
-                state.versesCache[cacheKey] = verses;
-            }
-            return verses;
-        }
+            try {
+                const url = `/.netlify/functions/bible-proxy?book=${encodeURIComponent(book)}&chapter=${chapter}&version=${version}`;
+                const response = await fetch(url);
 
-        async function getVerseContent(bibleId, verseId) {
-            const verse = await apiFetch(`/bibles/${bibleId}/verses/${verseId}?content-type=text`);
-            return verse;
-        }
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
 
-        // Demo data fallback
-        const demoVerses = {
-            'John-1': {
-                1: {
-                    KJV: 'In the beginning was the Word, and the Word was with God, and the Word was God.',
-                    WEB: 'In the beginning was the Word, and the Word was with God, and the Word was God.',
-                    RVR09: 'EN el principio era el Verbo, y el Verbo era con Dios, y el Verbo era Dios.',
-                },
-                2: {
-                    KJV: 'The same was in the beginning with God.',
-                    WEB: 'The same was in the beginning with God.',
-                    RVR09: 'Este era en el principio con Dios.',
-                },
-                3: {
-                    KJV: 'All things were made by him; and without him was not any thing made that was made.',
-                    WEB: 'All things were made through him. Without him, nothing was made that has been made.',
-                    RVR09: 'Todas las cosas por él fueron hechas; y sin él nada de lo que es hecho, fué hecho.',
-                }
-            },
-            'Genesis-1': {
-                1: {
-                    KJV: 'In the beginning God created the heaven and the earth.',
-                    WEB: 'In the beginning, God created the heavens and the earth.',
-                    RVR09: 'EN el principio crió Dios los cielos y la tierra.',
-                },
-                2: {
-                    KJV: 'And the earth was without form, and void; and darkness was upon the face of the deep.',
-                    WEB: 'The earth was formless and empty. Darkness was on the surface of the deep and God\'s Spirit was hovering over the surface of the waters.',
-                    RVR09: 'Y la tierra estaba desordenada y vacía, y las tinieblas estaban sobre la haz del abismo.',
-                }
+                const data = await response.json();
+                state.versesCache[cacheKey] = data;
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                return null;
             }
-        };
+        }
 
         // Load notes from localStorage
         function loadNotes() {
@@ -242,11 +230,11 @@
                 
                 if (state.selectedBook) {
                     html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
-                    html += `<span class="text-amber-400">${state.selectedBook.name || state.selectedBook}</span>`;
+                    html += `<span class="text-amber-400">${state.selectedBook.name}</span>`;
                     
                     if (state.selectedChapter) {
                         html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
-                        html += `<span class="text-amber-400">Chapter ${state.selectedChapter.number || state.selectedChapter}</span>`;
+                        html += `<span class="text-amber-400">Chapter ${state.selectedChapter}</span>`;
                     }
                 }
             }
@@ -255,12 +243,12 @@
         }
 
         // Testament selection
-        async function selectTestament(testament) {
+        function selectTestament(testament) {
             state.selectedTestament = testament;
             document.getElementById('testament-selection').classList.add('hidden');
             document.getElementById('book-selection').classList.remove('hidden');
             updateBreadcrumb();
-            await renderBooks();
+            renderBooks();
         }
 
         function goBackToTestament() {
@@ -272,45 +260,24 @@
         }
 
         // Book selection
-        async function renderBooks() {
+        function renderBooks() {
             const grid = document.getElementById('books-grid');
+            const books = state.selectedTestament === 'Old Testament' ? oldTestament : newTestament;
             
-            showLoading();
-            
-            // Get books from first available translation
-            const bibleId = BIBLE_VERSIONS[state.selectedTranslations[0]] || BIBLE_VERSIONS.KJV;
-            const books = await getBooks(bibleId);
-            
-            hideLoading();
-
-            if (!books) {
-                grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-8">Unable to load books. Please check your API key.</div>';
-                return;
-            }
-
-            // Filter by testament
-            const isOT = state.selectedTestament === 'Old Testament';
-            const filteredBooks = books.filter(book => {
-                // Old Testament books come before Matthew (MAT)
-                return isOT ? book.id < 'MAT' : book.id >= 'MAT';
-            });
-
-            state.availableBooks = filteredBooks;
-
-            grid.innerHTML = filteredBooks.map(book => `
+            grid.innerHTML = books.map(book => `
                 <button onclick='selectBook(${JSON.stringify(book).replace(/'/g, "&#39;")})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-4 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50">
                     <div class="font-semibold">${book.name}</div>
-                    <div class="text-sm text-slate-400">Click to view</div>
+                    <div class="text-sm text-slate-400">${book.chapters} chapters</div>
                 </button>
             `).join('');
         }
 
-        async function selectBook(book) {
+        function selectBook(book) {
             state.selectedBook = book;
             document.getElementById('book-selection').classList.add('hidden');
             document.getElementById('chapter-selection').classList.remove('hidden');
             updateBreadcrumb();
-            await renderChapters();
+            renderChapters();
         }
 
         function goBackToBooks() {
@@ -322,36 +289,25 @@
         }
 
         // Chapter selection
-        async function renderChapters() {
+        function renderChapters() {
             const grid = document.getElementById('chapters-grid');
-
-            showLoading();
-
-            const bibleId = BIBLE_VERSIONS[state.selectedTranslations[0]] || BIBLE_VERSIONS.KJV;
-            const chapters = await getChapters(bibleId, state.selectedBook.id);
-
-            hideLoading();
-
-            if (!chapters) {
-                grid.innerHTML = '<div class="text-slate-400 col-span-full text-center py-8">Unable to load chapters.</div>';
-                return;
-            }
-
+            const chapters = Array.from({ length: state.selectedBook.chapters }, (_, i) => i + 1);
+            
             grid.innerHTML = chapters.map(chapter => `
-                <button onclick='selectChapter(${JSON.stringify(chapter).replace(/'/g, "&#39;")})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-3 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50 font-semibold">
-                    ${chapter.number}
+                <button onclick="selectChapter(${chapter})" class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-3 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50 font-semibold">
+                    ${chapter}
                 </button>
             `).join('');
         }
 
-        async function selectChapter(chapter) {
+        function selectChapter(chapter) {
             state.selectedChapter = chapter;
             state.selectedVerse = null;
             document.getElementById('chapter-selection').classList.add('hidden');
             document.getElementById('chapter-view').classList.remove('hidden');
             updateBreadcrumb();
             renderTranslationSelector();
-            await renderVerses();
+            renderVerses();
         }
 
         function goBackToChapters() {
@@ -366,9 +322,9 @@
         function renderTranslationSelector() {
             const selector = document.getElementById('translation-selector');
             const translationNames = {
-                'KJV': 'KJV (English)',
-                'WEB': 'WEB (English)',
-                'RVR09': 'RVR09 (Español)'
+                'KJV': 'KJV',
+                'WEB': 'WEB',
+                'BBE': 'BBE'
             };
             
             selector.innerHTML = translations.map(trans => `
@@ -397,75 +353,50 @@
         // Verses rendering
         async function renderVerses() {
             const contentArea = document.getElementById('content-area');
-
             showLoading();
 
             // Fetch verses for each selected translation
             const versesByTranslation = {};
             
             for (const trans of state.selectedTranslations) {
-                const bibleId = BIBLE_VERSIONS[trans];
-                const verses = await getVerses(bibleId, state.selectedChapter.id);
-                
-                if (verses) {
-                    versesByTranslation[trans] = verses;
+                const data = await fetchVerses(state.selectedBook.id, state.selectedChapter, trans);
+                if (data && data.verses) {
+                    versesByTranslation[trans] = data.verses;
                 }
             }
 
             hideLoading();
 
-            // Organize verses by number
             const firstTrans = state.selectedTranslations[0];
             const firstVerses = versesByTranslation[firstTrans];
 
             if (!firstVerses || firstVerses.length === 0) {
                 contentArea.innerHTML = `
                     <div class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-8 text-center text-slate-400">
-                        <p>No verses found for this chapter.</p>
+                        <p>Unable to load verses. Please try again.</p>
                     </div>
                 `;
                 return;
             }
 
+            // Organize verses by number
             const organizedVerses = {};
             
             for (const verse of firstVerses) {
-                const verseNum = verse.number || verse.id.split('.').pop();
+                const verseNum = verse.verse;
                 organizedVerses[verseNum] = {};
                 
                 for (const trans of state.selectedTranslations) {
                     const transVerses = versesByTranslation[trans];
-                    const matchingVerse = transVerses?.find(v => {
-                        const vNum = v.number || v.id.split('.').pop();
-                        return vNum === verseNum;
-                    });
+                    const matchingVerse = transVerses?.find(v => v.verse === verseNum);
                     
                     if (matchingVerse) {
-                        organizedVerses[verseNum][trans] = matchingVerse.content || matchingVerse.text || '';
+                        organizedVerses[verseNum][trans] = matchingVerse.text;
                     }
                 }
             }
 
             renderVerseContent(organizedVerses);
-        }
-
-        function renderDemoVerses(verses) {
-            const contentArea = document.getElementById('content-area');
-            
-            if (Object.keys(verses).length === 0) {
-                contentArea.innerHTML = `
-                    <div class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-8 text-center text-slate-400">
-                        <p>This chapter's content is only available with an API key.</p>
-                        <p class="text-sm mt-2">Demo data available for Genesis 1 and John 1</p>
-                        <button onclick="showApiSettings()" class="mt-4 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg">
-                            Setup API Key
-                        </button>
-                    </div>
-                `;
-                return;
-            }
-
-            renderVerseContent(verses);
         }
 
         function renderVerseContent(verses) {
@@ -501,8 +432,8 @@
             const versesContainer = document.getElementById('verses-container');
 
             versesContainer.innerHTML = Object.keys(verses).map(verseNum => {
-                const bookName = state.selectedBook.name || state.selectedBook;
-                const chapterNum = state.selectedChapter.number || state.selectedChapter;
+                const bookName = state.selectedBook.name;
+                const chapterNum = state.selectedChapter;
                 const verseKey = `${bookName}-${chapterNum}-${verseNum}`;
                 const hasNotes = state.notes[verseKey];
                 
@@ -516,19 +447,12 @@
                             <span class="text-amber-400 font-bold text-lg flex-shrink-0 mt-1">${verseNum}</span>
                             <div class="flex-1 space-y-3">
                                 ${state.selectedTranslations.map(trans => {
-                                    const transNames = {
-                                        'KJV': 'KJV',
-                                        'WEB': 'WEB',
-                                        'RVR09': 'RVR09'
-                                    };
                                     const content = verses[verseNum][trans] || 'Loading...';
-                                    // Clean up HTML tags from API content
-                                    const cleanContent = content.replace(/<[^>]*>/g, '');
                                     
                                     return `
                                         <div>
-                                            <div class="text-xs text-slate-400 mb-1 font-semibold">${transNames[trans]}</div>
-                                            <div class="text-slate-200 leading-relaxed">${cleanContent}</div>
+                                            <div class="text-xs text-slate-400 mb-1 font-semibold">${trans}</div>
+                                            <div class="text-slate-200 leading-relaxed">${content}</div>
                                         </div>
                                     `;
                                 }).join('')}
@@ -550,8 +474,8 @@
 
         function selectVerse(verseNum) {
             state.selectedVerse = verseNum;
-            const bookName = state.selectedBook.name || state.selectedBook;
-            const chapterNum = state.selectedChapter.number || state.selectedChapter;
+            const bookName = state.selectedBook.name;
+            const chapterNum = state.selectedChapter;
             const verseKey = `${bookName}-${chapterNum}-${verseNum}`;
             state.currentNote = state.notes[verseKey] || '';
             renderVerses();
@@ -561,8 +485,8 @@
             const textarea = document.getElementById('note-textarea');
             if (textarea) {
                 state.currentNote = textarea.value;
-                const bookName = state.selectedBook.name || state.selectedBook;
-                const chapterNum = state.selectedChapter.number || state.selectedChapter;
+                const bookName = state.selectedBook.name;
+                const chapterNum = state.selectedChapter;
                 const verseKey = `${bookName}-${chapterNum}-${state.selectedVerse}`;
                 state.notes[verseKey] = state.currentNote;
                 saveNotes();
