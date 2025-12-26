@@ -45,7 +45,10 @@ exports.handler = async (event, context) => {
         'BBE': 'BBE',
         'ASV': 'ASV',
         'YLT': 'YLT',
-        'JPKJV': 'KOUGO' // 'Kougo' is the standard Japanese Colloquial on Bolls
+        'JPKJV': 'JPKJV',
+        'CUV': 'CUV',
+        'RVR': 'BTX3',
+        'VUL': 'VUlG'
       };
       translationCode = versionMap[version] || 'KJV';
     }
