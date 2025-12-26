@@ -42,7 +42,7 @@ exports.handler = async (event, context) => {
       const versionMap = {
         'KJV': 'KJV',
         'WEB': 'WEB',
-        'BBE': 'BBE',
+        'BBE': 'BSB',
         'ASV': 'ASV',
         'YLT': 'YLT',
         'JPKJV': 'JPKJV',
