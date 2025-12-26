@@ -243,7 +243,8 @@
         // Using Bible-API.com for English + Bolls Life for Hebrew/Greek
         const translations = ['KJV', 'WEB', 'BBE', 'ASV', 'YLT'];
 
-        // Book abbreviations for Bolls Life API
+               // Book abbreviations for Bolls Life API
+        // Updated to use shorter codes (Mat, Mrk, Luk, Jhn) which work better with TR
         const bollsBookMap = {
             // Old Testament
             'Genesis': 'Gen', 'Exodus': 'Exod', 'Leviticus': 'Lev', 'Numbers': 'Num', 
@@ -256,8 +257,12 @@
             'Hosea': 'Hos', 'Joel': 'Joel', 'Amos': 'Amos', 'Obadiah': 'Obad',
             'Jonah': 'Jonah', 'Micah': 'Mic', 'Nahum': 'Nah', 'Habakkuk': 'Hab',
             'Zephaniah': 'Zeph', 'Haggai': 'Hag', 'Zechariah': 'Zech', 'Malachi': 'Mal',
-            // New Testament
-            'Matthew': 'Matt', 'Mark': 'Mark', 'Luke': 'Luke', 'John': 'John',
+            
+            // New Testament - UPDATED KEYS HERE
+            'Matthew': 'Mat',      // Changed from 'Matt'
+            'Mark': 'Mrk',         // Changed from 'Mark' to be safe
+            'Luke': 'Luk',         // Changed from 'Luke' to be safe
+            'John': 'Jhn',         // Changed from 'John' to be safe
             'Acts': 'Acts', 'Romans': 'Rom', '1 Corinthians': '1Cor', '2 Corinthians': '2Cor',
             'Galatians': 'Gal', 'Ephesians': 'Eph', 'Philippians': 'Phil', 'Colossians': 'Col',
             '1 Thessalonians': '1Thess', '2 Thessalonians': '2Thess', '1 Timothy': '1Tim',
@@ -265,6 +270,7 @@
             'James': 'Jas', '1 Peter': '1Pet', '2 Peter': '2Pet', '1 John': '1John',
             '2 John': '2John', '3 John': '3John', 'Jude': 'Jude', 'Revelation': 'Rev'
         };
+
 
         // State management
         let state = {
