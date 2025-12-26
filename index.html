@@ -11,6 +11,11 @@
             min-height: 100vh;
         }
         
+        .verse-wrapper {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
         .verse-text {
             display: inline;
         }
@@ -232,8 +237,31 @@
     </div>
 
     <script>
-        // Using Bible-API.com - completely free, no API key needed
+        // Using Bible-API.com for English + Bolls Life for Hebrew/Greek
         const translations = ['KJV', 'WEB', 'BBE'];
+
+        // Book abbreviations for Bolls Life API
+        const bollsBookMap = {
+            // Old Testament
+            'Genesis': 'Gen', 'Exodus': 'Exod', 'Leviticus': 'Lev', 'Numbers': 'Num', 
+            'Deuteronomy': 'Deut', 'Joshua': 'Josh', 'Judges': 'Judg', 'Ruth': 'Ruth',
+            '1 Samuel': '1Sam', '2 Samuel': '2Sam', '1 Kings': '1Kgs', '2 Kings': '2Kgs',
+            '1 Chronicles': '1Chr', '2 Chronicles': '2Chr', 'Ezra': 'Ezra', 'Nehemiah': 'Neh',
+            'Esther': 'Esth', 'Job': 'Job', 'Psalms': 'Ps', 'Proverbs': 'Prov',
+            'Ecclesiastes': 'Eccl', 'Song of Solomon': 'Song', 'Isaiah': 'Isa',
+            'Jeremiah': 'Jer', 'Lamentations': 'Lam', 'Ezekiel': 'Ezek', 'Daniel': 'Dan',
+            'Hosea': 'Hos', 'Joel': 'Joel', 'Amos': 'Amos', 'Obadiah': 'Obad',
+            'Jonah': 'Jonah', 'Micah': 'Mic', 'Nahum': 'Nah', 'Habakkuk': 'Hab',
+            'Zephaniah': 'Zeph', 'Haggai': 'Hag', 'Zechariah': 'Zech', 'Malachi': 'Mal',
+            // New Testament
+            'Matthew': 'Matt', 'Mark': 'Mark', 'Luke': 'Luke', 'John': 'John',
+            'Acts': 'Acts', 'Romans': 'Rom', '1 Corinthians': '1Cor', '2 Corinthians': '2Cor',
+            'Galatians': 'Gal', 'Ephesians': 'Eph', 'Philippians': 'Phil', 'Colossians': 'Col',
+            '1 Thessalonians': '1Thess', '2 Thessalonians': '2Thess', '1 Timothy': '1Tim',
+            '2 Timothy': '2Tim', 'Titus': 'Titus', 'Philemon': 'Phlm', 'Hebrews': 'Heb',
+            'James': 'Jas', '1 Peter': '1Pet', '2 Peter': '2Pet', '1 John': '1John',
+            '2 John': '2John', '3 John': '3John', 'Jude': 'Jude', 'Revelation': 'Rev'
+        };
 
         // State management
         let state = {
@@ -358,6 +386,32 @@
                 return data;
             } catch (error) {
                 console.error('API Error:', error);
+                return null;
+            }
+        }
+
+        async function fetchOriginalLanguage(book, chapter, testament) {
+            const cacheKey = `${book}-${chapter}-original`;
+            if (state.versesCache[cacheKey]) {
+                return state.versesCache[cacheKey];
+            }
+
+            try {
+                const bollsBook = bollsBookMap[book];
+                const testamentCode = testament === 'Old Testament' ? 'ot' : 'nt';
+                const url = `/.netlify/functions/bible-proxy?book=${bollsBook}&chapter=${chapter}&type=original&testament=${testamentCode}`;
+                
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                state.versesCache[cacheKey] = data;
+                return data;
+            } catch (error) {
+                console.error('Original language API Error:', error);
                 return null;
             }
         }
@@ -515,7 +569,11 @@
             const contentArea = document.getElementById('content-area');
             showLoading();
 
+            // Fetch English translation
             const data = await fetchVerses(state.selectedBook.id, state.selectedChapter, state.selectedTranslation);
+            
+            // Fetch original language (Hebrew or Greek)
+            const originalData = await fetchOriginalLanguage(state.selectedBook.name, state.selectedChapter, state.selectedTestament);
 
             hideLoading();
 
@@ -544,6 +602,12 @@
                         const highlight = state.highlights[verseKey];
                         const highlightStyle = highlight ? `background-color: ${highlightColors[highlight]}; padding: 2px 4px; border-radius: 3px;` : '';
                         
+                        // Get original language text
+                        let originalText = '';
+                        if (originalData && originalData[verse.verse - 1]) {
+                            originalText = originalData[verse.verse - 1].text;
+                        }
+                        
                         return `
                             <div class="verse-wrapper">
                                 <sup class="verse-number">${verse.verse}</sup>
@@ -568,6 +632,12 @@
                                         </svg>
                                     </button>
                                 </span>
+                                ${originalText ? `
+                                    <div class="mt-2 ml-6 text-base text-slate-400 italic border-l-2 border-slate-700 pl-3">
+                                        <span class="text-xs text-amber-400 font-semibold">${state.selectedTestament === 'Old Testament' ? 'Hebrew' : 'Greek'}:</span>
+                                        <span class="font-serif" dir="${state.selectedTestament === 'Old Testament' ? 'rtl' : 'ltr'}">${originalText}</span>
+                                    </div>
+                                ` : ''}
                             </div>
                         `;
                     }).join('')}
