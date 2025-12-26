@@ -1,5 +1,4 @@
-try {
-    // Fetch from Bible API (supports KJV, WEB, an// Using multiple Bible APIs for complete coverage
+// Using multiple Bible APIs for complete coverage
 exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -34,17 +33,29 @@ exports.handler = async (event, context) => {
     // Handle original languages (Hebrew/Greek) from Bolls Life
     if (type === 'original') {
       const testament = event.queryStringParameters.testament;
-      const bibleCode = testament === 'ot' ? 'hbo' : 'grk'; // Hebrew or Greek
-      const url = `https://bolls.life/get-paralel-${chapter}/${bibleCode}/${book}/`;
       
-      console.log('Fetching original:', url);
+      // Bolls Life uses different endpoints
+      // Format: https://bolls.life/get-chapter/GRK/Matt/1/
+      const languageCode = testament === 'ot' ? 'HEB' : 'GRK';
+      const url = `https://bolls.life/get-chapter/${languageCode}/${book}/${chapter}/`;
+      
+      console.log('Fetching original from:', url);
       
       const response = await fetch(url);
+      
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        console.error('Bolls API error:', response.status);
+        // Return empty array instead of error so the page still works
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify([])
+        };
       }
 
       const data = await response.json();
+      console.log('Bolls API success');
+      
       return {
         statusCode: 200,
         headers,
@@ -61,9 +72,9 @@ exports.handler = async (event, context) => {
     
     let formattedBook = book.replace(/\s+/g, '');
     formattedBook = formattedBook
-      .replace('1', '1%20')
-      .replace('2', '2%20')
-      .replace('3', '3%20');
+      .replace(/^1/, '1%20')
+      .replace(/^2/, '2%20')
+      .replace(/^3/, '3%20');
     
     if (book === 'SongofSolomon') {
       formattedBook = 'Song%20of%20Solomon';
@@ -72,7 +83,7 @@ exports.handler = async (event, context) => {
     const apiVersion = versionMap[version] || 'kjv';
     const url = `https://bible-api.com/${formattedBook}${chapter}?translation=${apiVersion}`;
     
-    console.log('Fetching:', url);
+    console.log('Fetching English from:', url);
     
     const response = await fetch(url);
 
@@ -87,7 +98,7 @@ exports.handler = async (event, context) => {
     }
 
     const data = await response.json();
-    console.log('API Success');
+    console.log('Bible API success');
 
     return {
       statusCode: 200,
@@ -99,7 +110,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ error: error.message, stack: error.stack })
     };
   }
 };
