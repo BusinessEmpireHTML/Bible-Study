@@ -545,7 +545,7 @@
                         const highlightStyle = highlight ? `background-color: ${highlightColors[highlight]}; padding: 2px 4px; border-radius: 3px;` : '';
                         
                         return `
-                            <span class="verse-wrapper">
+                            <div class="verse-wrapper">
                                 <sup class="verse-number">${verse.verse}</sup>
                                 <span class="verse-content ${highlight ? 'verse-highlighted' : ''}" style="${highlightStyle}" data-verse="${verse.verse}">${verse.text}</span>
                                 <span class="verse-actions">
@@ -568,9 +568,9 @@
                                         </svg>
                                     </button>
                                 </span>
-                            </span>
+                            </div>
                         `;
-                    }).join(' ')}
+                    }).join('')}
                 </div>
             `;
         }
