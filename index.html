@@ -226,12 +226,11 @@
                 <div class="flex flex-wrap gap-2 items-center">
                     <label class="text-slate-300 text-sm">Translation:</label>
                     <select id="translation-select" onchange="changeTranslation()" class="bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-amber-500">
-                        <option value="KJV">KJV - King James Version</option>
-                        <option value="WEB">WEB - World English Bible</option>
-                        <option value="BBE">BBE - Bible in Basic English</option>
-                        <option value="NKJV">NKJV - New King James Version</option>
-                        <option value="ESV">ESV - English Standard Version</option>
-                        <option value="NLT">NLT - New Living Translation</option>
+                       <option value="KJV">KJV - King James Version</option>
+                       <option value="WEB">WEB - World English Bible</option>
+                       <option value="BBE">BBE - Bible in Basic English</option>
+                       <option value="ASV">ASV - American Standard Version</option>
+                       <option value="YLT">YLT - Young's Literal Translation</option>
                     </select>
                 </div>
             </div>
@@ -242,7 +241,7 @@
 
     <script>
         // Using Bible-API.com for English + Bolls Life for Hebrew/Greek
-        const translations = ['KJV', 'WEB', 'BBE', 'NKJV', 'ESV', 'NLT'];
+        const translations = ['KJV', 'WEB', 'BBE', 'ASV', 'YLT'];
 
         // Book abbreviations for Bolls Life API
         const bollsBookMap = {
