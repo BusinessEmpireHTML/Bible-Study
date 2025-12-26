@@ -7,22 +7,110 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a);
+            background: linear-gradient(to bottom right, #020617, #0f172a, #020617);
             min-height: 100vh;
+        }
+        
+        .verse-text {
+            display: inline;
+        }
+        
+        .verse-number {
+            font-weight: 600;
+            color: #fbbf24;
+            font-size: 0.75rem;
+            vertical-align: super;
+            margin-right: 0.25rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .verse-content {
+            display: inline;
+            cursor: pointer;
+            padding: 2px 0;
+            transition: all 0.2s;
+        }
+        
+        .verse-content:hover {
+            background-color: rgba(251, 191, 36, 0.1);
+            border-radius: 3px;
+        }
+        
+        .verse-highlighted {
+            background-color: rgba(251, 191, 36, 0.25);
+            border-radius: 3px;
+            padding: 2px 4px;
+        }
+        
+        .verse-actions {
+            display: inline-flex;
+            gap: 0.25rem;
+            margin-left: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .verse-wrapper:hover .verse-actions {
+            opacity: 1;
+        }
+        
+        .highlight-color {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .highlight-color:hover {
+            transform: scale(1.2);
+            border-color: white;
         }
     </style>
 </head>
 <body class="text-white">
     <!-- Header -->
-    <div class="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-10">
+    <div class="bg-slate-900/80 backdrop-blur-sm border-b border-slate-800/50 sticky top-0 z-10 shadow-xl">
         <div class="max-w-7xl mx-auto px-4 py-4">
-            <div class="flex items-center gap-3">
-                <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                </svg>
-                <h1 class="text-2xl font-bold">Bible Study</h1>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <h1 class="text-2xl font-bold">Bible Study</h1>
+                </div>
+                
+                <button id="highlights-tab-btn" onclick="toggleHighlightsPanel()" class="flex items-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-700/50 transition-all">
+                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                    </svg>
+                    <span>Highlights</span>
+                    <span id="highlights-count" class="bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
             </div>
             <div id="breadcrumb" class="flex items-center gap-2 mt-3 text-sm text-slate-300"></div>
+        </div>
+    </div>
+
+    <!-- Highlights Panel -->
+    <div id="highlights-panel" class="hidden fixed top-20 right-4 w-96 max-h-[80vh] bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden z-50">
+        <div class="bg-slate-800/50 p-4 border-b border-slate-700/50 flex items-center justify-between">
+            <h3 class="font-bold text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                </svg>
+                Highlighted Verses
+            </h3>
+            <button onclick="toggleHighlightsPanel()" class="text-slate-400 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div id="highlights-content" class="overflow-y-auto max-h-[calc(80vh-5rem)] p-4">
+            <div class="text-slate-400 text-center py-8">No highlighted verses yet</div>
         </div>
     </div>
 
@@ -37,7 +125,27 @@
         </div>
     </div>
 
-    <!-- Notes Modal -->
+    <!-- Highlight Color Picker Modal -->
+    <div id="highlight-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-lg p-6 max-w-sm w-full">
+            <h3 class="text-lg font-bold text-white mb-4">Choose Highlight Color</h3>
+            <div class="grid grid-cols-5 gap-3 mb-4">
+                <button onclick="selectHighlight('yellow')" class="highlight-color" style="background-color: rgba(251, 191, 36, 0.4);" title="Yellow"></button>
+                <button onclick="selectHighlight('green')" class="highlight-color" style="background-color: rgba(34, 197, 94, 0.4);" title="Green"></button>
+                <button onclick="selectHighlight('blue')" class="highlight-color" style="background-color: rgba(59, 130, 246, 0.4);" title="Blue"></button>
+                <button onclick="selectHighlight('purple')" class="highlight-color" style="background-color: rgba(168, 85, 247, 0.4);" title="Purple"></button>
+                <button onclick="selectHighlight('pink')" class="highlight-color" style="background-color: rgba(236, 72, 153, 0.4);" title="Pink"></button>
+                <button onclick="selectHighlight('red')" class="highlight-color" style="background-color: rgba(239, 68, 68, 0.4);" title="Red"></button>
+                <button onclick="selectHighlight('orange')" class="highlight-color" style="background-color: rgba(249, 115, 22, 0.4);" title="Orange"></button>
+                <button onclick="selectHighlight('teal')" class="highlight-color" style="background-color: rgba(20, 184, 166, 0.4);" title="Teal"></button>
+                <button onclick="selectHighlight('cyan')" class="highlight-color" style="background-color: rgba(6, 182, 212, 0.4);" title="Cyan"></button>
+                <button onclick="selectHighlight('lime')" class="highlight-color" style="background-color: rgba(132, 204, 22, 0.4);" title="Lime"></button>
+            </div>
+            <button onclick="closeHighlightModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-colors">
+                Cancel
+            </button>
+        </div>
+    </div>
     <div id="notes-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
@@ -135,10 +243,12 @@
             selectedVerse: null,
             selectedVerseText: '',
             notes: {},
+            highlights: {},
             currentNote: '',
             selectedTranslation: 'KJV',
             versesCache: {},
-            currentVerses: {}
+            currentVerses: {},
+            highlightingVerse: null
         };
 
         // Bible books with their abbreviations
@@ -216,6 +326,8 @@
 
         window.onload = function() {
             loadNotes();
+            loadHighlights();
+            updateHighlightsCount();
         };
 
         function showLoading() {
@@ -262,6 +374,33 @@
         function saveNotesToStorage() {
             localStorage.setItem('bible-notes', JSON.stringify(state.notes));
         }
+
+        // Load highlights from localStorage
+        function loadHighlights() {
+            const saved = localStorage.getItem('bible-highlights');
+            if (saved) {
+                state.highlights = JSON.parse(saved);
+            }
+        }
+
+        // Save highlights to localStorage
+        function saveHighlights() {
+            localStorage.setItem('bible-highlights', JSON.stringify(state.highlights));
+        }
+
+        // Highlight colors map
+        const highlightColors = {
+            yellow: 'rgba(251, 191, 36, 0.4)',
+            green: 'rgba(34, 197, 94, 0.4)',
+            blue: 'rgba(59, 130, 246, 0.4)',
+            purple: 'rgba(168, 85, 247, 0.4)',
+            pink: 'rgba(236, 72, 153, 0.4)',
+            red: 'rgba(239, 68, 68, 0.4)',
+            orange: 'rgba(249, 115, 22, 0.4)',
+            teal: 'rgba(20, 184, 166, 0.4)',
+            cyan: 'rgba(6, 182, 212, 0.4)',
+            lime: 'rgba(132, 204, 22, 0.4)'
+        };
 
         // Update breadcrumb
         function updateBreadcrumb() {
@@ -396,41 +535,42 @@
             });
 
             contentArea.innerHTML = `
-                <div class="space-y-3">
+                <div class="bg-slate-900/50 border border-slate-800/50 rounded-lg p-8 text-slate-200 leading-relaxed text-lg shadow-xl">
                     ${data.verses.map(verse => {
                         const bookName = state.selectedBook.name;
                         const chapterNum = state.selectedChapter;
                         const verseKey = `${bookName}-${chapterNum}-${verse.verse}`;
                         const hasNotes = state.notes[verseKey];
+                        const highlight = state.highlights[verseKey];
+                        const highlightStyle = highlight ? `background-color: ${highlightColors[highlight]}; padding: 2px 4px; border-radius: 3px;` : '';
                         
                         return `
-                            <div class="bg-slate-800/50 border border-slate-700/50 hover:border-slate-600 rounded-lg p-4 transition-all group">
-                                <div class="flex items-start gap-3">
-                                    <span class="text-amber-400 font-bold text-lg flex-shrink-0 mt-0.5 min-w-[2rem]">${verse.verse}</span>
-                                    <div class="flex-1">
-                                        <p class="text-slate-200 leading-relaxed">${verse.text}</p>
-                                    </div>
+                            <span class="verse-wrapper">
+                                <sup class="verse-number">${verse.verse}</sup>
+                                <span class="verse-content ${highlight ? 'verse-highlighted' : ''}" style="${highlightStyle}" data-verse="${verse.verse}">${verse.text}</span>
+                                <span class="verse-actions">
+                                    <button 
+                                        onclick="openHighlightModal(${verse.verse})" 
+                                        class="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-slate-700/50 ${highlight ? 'text-amber-400' : 'text-slate-500 hover:text-amber-400'}" 
+                                        title="${highlight ? 'Change highlight' : 'Highlight verse'}"
+                                    >
+                                        <svg class="w-3.5 h-3.5" fill="${highlight ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                                        </svg>
+                                    </button>
                                     <button 
                                         onclick="openNotesModal(${verse.verse})" 
-                                        class="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-lg ${hasNotes ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-amber-400 hover:bg-slate-700/50'}"
+                                        class="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-slate-700/50 ${hasNotes ? 'text-amber-400' : 'text-slate-500 hover:text-amber-400'}"
                                         title="${hasNotes ? 'Edit notes' : 'Add notes'}"
                                     >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                                         </svg>
                                     </button>
-                                </div>
-                                ${hasNotes ? `
-                                    <div class="mt-2 ml-11 flex items-center gap-2 text-amber-400 text-xs">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                                        </svg>
-                                        <span>Has notes</span>
-                                    </div>
-                                ` : ''}
-                            </div>
+                                </span>
+                            </span>
                         `;
-                    }).join('')}
+                    }).join(' ')}
                 </div>
             `;
         }
@@ -480,6 +620,164 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeNotesModal();
+                closeHighlightModal();
+                if (!document.getElementById('notes-modal').classList.contains('hidden')) {
+                    return;
+                }
+                if (document.getElementById('highlights-panel').classList.contains('hidden') === false) {
+                    toggleHighlightsPanel();
+                }
+            }
+        });
+
+        // Highlight functions
+        function openHighlightModal(verseNum) {
+            state.highlightingVerse = verseNum;
+            document.getElementById('highlight-modal').classList.remove('hidden');
+        }
+
+        function closeHighlightModal() {
+            document.getElementById('highlight-modal').classList.add('hidden');
+            state.highlightingVerse = null;
+        }
+
+        function selectHighlight(color) {
+            if (!state.highlightingVerse) return;
+            
+            const bookName = state.selectedBook.name;
+            const chapterNum = state.selectedChapter;
+            const verseKey = `${bookName}-${chapterNum}-${state.highlightingVerse}`;
+            
+            // If same color, remove highlight
+            if (state.highlights[verseKey] === color) {
+                delete state.highlights[verseKey];
+            } else {
+                state.highlights[verseKey] = color;
+            }
+            
+            saveHighlights();
+            updateHighlightsCount();
+            closeHighlightModal();
+            renderVerses();
+        }
+
+        function updateHighlightsCount() {
+            const count = Object.keys(state.highlights).length;
+            document.getElementById('highlights-count').textContent = count;
+        }
+
+        function toggleHighlightsPanel() {
+            const panel = document.getElementById('highlights-panel');
+            const isHidden = panel.classList.contains('hidden');
+            
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                renderHighlightsPanel();
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        function renderHighlightsPanel() {
+            const content = document.getElementById('highlights-content');
+            const highlights = Object.entries(state.highlights);
+            
+            if (highlights.length === 0) {
+                content.innerHTML = '<div class="text-slate-400 text-center py-8">No highlighted verses yet</div>';
+                return;
+            }
+
+            // Group by book
+            const grouped = {};
+            highlights.forEach(([key, color]) => {
+                const [book, chapter, verse] = key.split('-');
+                const bookChapter = `${book} ${chapter}`;
+                if (!grouped[bookChapter]) {
+                    grouped[bookChapter] = [];
+                }
+                grouped[bookChapter].push({ verse, color, key });
+            });
+
+            content.innerHTML = Object.entries(grouped).map(([bookChapter, verses]) => `
+                <div class="mb-4">
+                    <h4 class="font-bold text-slate-300 mb-2">${bookChapter}</h4>
+                    <div class="space-y-2">
+                        ${verses.map(v => `
+                            <div class="flex items-center gap-2 group">
+                                <div class="w-3 h-3 rounded flex-shrink-0" style="background-color: ${highlightColors[v.color]}"></div>
+                                <button onclick="goToVerse('${v.key}')" class="flex-1 text-left text-sm text-slate-300 hover:text-white transition-colors">
+                                    Verse ${v.verse}
+                                </button>
+                                <button onclick="removeHighlight('${v.key}')" class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function removeHighlight(verseKey) {
+            delete state.highlights[verseKey];
+            saveHighlights();
+            updateHighlightsCount();
+            renderHighlightsPanel();
+            if (state.selectedBook && state.selectedChapter) {
+                renderVerses();
+            }
+        }
+
+        function goToVerse(verseKey) {
+            const [bookName, chapter, verse] = verseKey.split('-');
+            
+            // Find the book
+            const allBooks = [...oldTestament, ...newTestament];
+            const book = allBooks.find(b => b.name === bookName);
+            
+            if (!book) return;
+            
+            // Set testament
+            state.selectedTestament = oldTestament.includes(book) ? 'Old Testament' : 'New Testament';
+            
+            // Navigate to the verse
+            state.selectedBook = book;
+            state.selectedChapter = parseInt(chapter);
+            
+            // Hide all sections
+            document.getElementById('testament-selection').classList.add('hidden');
+            document.getElementById('book-selection').classList.add('hidden');
+            document.getElementById('chapter-selection').classList.add('hidden');
+            document.getElementById('chapter-view').classList.remove('hidden');
+            
+            updateBreadcrumb();
+            document.getElementById('translation-select').value = state.selectedTranslation;
+            
+            toggleHighlightsPanel();
+            
+            renderVerses().then(() => {
+                // Scroll to verse
+                setTimeout(() => {
+                    const verseElement = document.querySelector(`[data-verse="${verse}"]`);
+                    if (verseElement) {
+                        verseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Flash the verse
+                        verseElement.style.transition = 'all 0.3s';
+                        verseElement.style.transform = 'scale(1.05)';
+                        setTimeout(() => {
+                            verseElement.style.transform = 'scale(1)';
+                        }, 300);
+                    }
+                }, 100);
+            });
+        }
+
+        // Close highlight modal when clicking outside
+        document.getElementById('highlight-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeHighlightModal();
             }
         });
     </script>
