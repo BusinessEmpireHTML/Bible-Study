@@ -399,16 +399,31 @@
 
             try {
                 const bollsBook = bollsBookMap[book];
+                if (!bollsBook) {
+                    console.log('Book not found in map:', book);
+                    return null;
+                }
+                
                 const testamentCode = testament === 'Old Testament' ? 'ot' : 'nt';
                 const url = `/.netlify/functions/bible-proxy?book=${bollsBook}&chapter=${chapter}&type=original&testament=${testamentCode}`;
+                
+                console.log('Fetching original language from:', url);
                 
                 const response = await fetch(url);
 
                 if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
+                    console.error('Original language fetch failed:', response.status);
+                    return null;
                 }
 
                 const data = await response.json();
+                
+                // Handle empty response gracefully
+                if (!data || data.length === 0) {
+                    console.log('No original language data available');
+                    return null;
+                }
+                
                 state.versesCache[cacheKey] = data;
                 return data;
             } catch (error) {
@@ -605,8 +620,9 @@
                         
                         // Get original language text
                         let originalText = '';
-                        if (originalData && originalData[verse.verse - 1]) {
-                            originalText = originalData[verse.verse - 1].text;
+                        if (originalData && Array.isArray(originalData) && originalData[verse.verse - 1]) {
+                            const verseData = originalData[verse.verse - 1];
+                            originalText = verseData.text || verseData.verse || '';
                         }
                         
                         return `
