@@ -70,7 +70,8 @@ exports.handler = async (event, context) => {
       'WEB': 'web',
       'BBE': 'bbe',
       'ASV': 'asv',
-      'YLT': 'ylt'
+      'YLT': 'ylt',
+      'NJB': 'njb'
     };
     
     let formattedBook = book.replace(/\s+/g, '');
