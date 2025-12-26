@@ -37,7 +37,7 @@ exports.handler = async (event, context) => {
             // Bolls Life uses specific translation codes:
       // WLC = Westminster Leningrad Codex (Hebrew)
       // TR  = Textus Receptus (Greek) 
-      const languageCode = testament === 'ot' ? 'WLC' : 'TR';
+      const languageCode = testament === 'ot' ? 'WLC' : 'NTGT';
       const url = `https://bolls.life/get-chapter/${languageCode}/${book}/${chapter}/`;
       
       console.log('Fetching original from:', url);
@@ -68,7 +68,10 @@ exports.handler = async (event, context) => {
     const versionMap = {
       'KJV': 'kjv',
       'WEB': 'web',
-      'BBE': 'bbe'
+      'BBE': 'bbe',
+      'NKJV': 'nkjv',
+      'ESV': 'esv',
+      'NLT': 'nlt'
     };
     
     let formattedBook = book.replace(/\s+/g, '');
