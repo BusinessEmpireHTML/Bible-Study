@@ -1,4 +1,4 @@
-// Using multiple Bible APIs for complete coverage
+// bible-proxy.js
 exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -19,7 +19,7 @@ exports.handler = async (event, context) => {
     };
   }
 
-  const { version, book, chapter, type } = event.queryStringParameters || {};
+  const { version, book, chapter, type, testament } = event.queryStringParameters || {};
 
   if (!book || !chapter) {
     return {
@@ -30,91 +30,76 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // Handle original languages (Hebrew/Greek) from Bolls Life
+    // 1. Determine the Translation Code
+    let translationCode = 'KJV'; // Default
+
     if (type === 'original') {
-      const testament = event.queryStringParameters.testament;
-      
-            // Bolls Life uses specific translation codes:
-      // WLC = Westminster Leningrad Codex (Hebrew)
-      // TR  = Textus Receptus (Greek) 
-      const languageCode = testament === 'ot' ? 'WLC' : 'TR';
-      const url = `https://bolls.life/get-chapter/${languageCode}/${book}/${chapter}/`;
-      
-      console.log('Fetching original from:', url);
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        console.error('Bolls API error:', response.status);
-        // Return empty array instead of error so the page still works
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify([])
-        };
-      }
-
-      const data = await response.json();
-      console.log('Bolls API success');
-      
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(data)
+      // WLC for Old Testament (Hebrew), TR for New Testament (Greek)
+      // Bolls Life uses 'WLC' and 'TR' codes standardly
+      translationCode = (testament === 'ot' || testament === 'Old Testament') ? 'WLC' : 'TR';
+    } else {
+      // Map frontend version names to Bolls Life codes
+      const versionMap = {
+        'KJV': 'KJV',
+        'WEB': 'WEB',
+        'BBE': 'BBE',
+        'ASV': 'ASV',
+        'YLT': 'YLT',
+        'JPKJV': 'KOUGO' // 'Kougo' is the standard Japanese Colloquial on Bolls
       };
+      translationCode = versionMap[version] || 'KJV';
     }
 
-    // Handle English translations from Bible-API.com
-    const versionMap = {
-      'KJV': 'kjv',
-      'WEB': 'web',
-      'BBE': 'bbe',
-      'ASV': 'asv',
-      'YLT': 'ylt',
-      'JPKJV': 'jpkjv'
-    };
+    // 2. Construct Bolls Life URL
+    // Format: https://bolls.life/get-chapter/{translation}/{book_id}/{chapter}/
+    // We pass the 'book' parameter directly. The frontend must now send IDs (1-66) 
+    // or valid Bolls abbreviations (GEN, EXO).
+    const url = `https://bolls.life/get-chapter/${translationCode}/${book}/${chapter}/`;
     
-    let formattedBook = book.replace(/\s+/g, '');
-    formattedBook = formattedBook
-      .replace(/^1/, '1%20')
-      .replace(/^2/, '2%20')
-      .replace(/^3/, '3%20');
-    
-    if (book === 'SongofSolomon') {
-      formattedBook = 'Song%20of%20Solomon';
-    }
-    
-    const apiVersion = versionMap[version] || 'kjv';
-    const url = `https://bible-api.com/${formattedBook}${chapter}?translation=${apiVersion}`;
-    
-    console.log('Fetching English from:', url);
-    
+    console.log('Fetching from Bolls:', url);
+
     const response = await fetch(url);
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Bible API error:', response.status, errorText);
+      console.error('Bolls API error:', response.status);
       return {
         statusCode: response.status,
         headers,
-        body: JSON.stringify({ error: `API Error: ${response.status}`, details: errorText })
+        body: JSON.stringify({ error: `Bolls API Error: ${response.status}` })
       };
     }
 
     const data = await response.json();
-    console.log('Bible API success');
+
+    // 3. Normalize Data
+    // Bolls returns an array of objects. We return it as-is or wrapped.
+    // The frontend expects { verses: [...] } or just the array depending on previous logic.
+    // Let's return a consistent structure matching what your frontend consumes.
+    
+    // Bolls structure: [{ pk: 1, verse: 1, text: "..." }, ...]
+    // Your frontend expects: { verses: [ ... ] } in some places, so let's wrap it to be safe 
+    // OR update frontend to handle the array. 
+    // To match your existing renderVerses, let's return the object structure it expects.
+    
+    const formattedData = {
+        verses: data.map(v => ({
+            verse: v.verse,
+            text: v.text_html || v.text // Bolls often sends HTML text
+        }))
+    };
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(data)
+      body: JSON.stringify(formattedData)
     };
+
   } catch (error) {
     console.error('Function error:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message, stack: error.stack })
+      body: JSON.stringify({ error: error.message })
     };
   }
 };
