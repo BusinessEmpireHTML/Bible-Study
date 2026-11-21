@@ -21,43 +21,28 @@ exports.handler = async (event, context) => {
 
   const { version, book, chapter, type, testament } = event.queryStringParameters || {};
 
-  if (!book || !chapter) {
+  const bookNum = Number(book);
+  const chapterNum = Number(chapter);
+  if (!Number.isInteger(bookNum) || bookNum < 1 || bookNum > 66 ||
+      !Number.isInteger(chapterNum) || chapterNum < 1 || chapterNum > 150) {
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: 'Missing book or chapter parameter' })
+      body: JSON.stringify({ error: 'Missing or invalid book/chapter parameter' })
     };
   }
 
+  // Translations the frontend may request (values are bolls.life codes).
+  const ALLOWED_TRANSLATIONS = ['KJV', 'WEB', 'BSB', 'ASV', 'YLT', 'JPKJV', 'CUV', 'BTX3', 'VULG'];
+
   try {
-    // 1. Determine the Translation Code
-    let translationCode = 'KJV'; // Default
+    // Original language: WLC (Hebrew) for the Old Testament, TR (Greek) for the New.
+    const translationCode = type === 'original'
+      ? (testament === 'ot' ? 'WLC' : 'TR')
+      : (ALLOWED_TRANSLATIONS.includes(version) ? version : 'KJV');
 
-    if (type === 'original') {
-      // WLC for Old Testament (Hebrew), TR for New Testament (Greek)
-      // Bolls Life uses 'WLC' and 'TR' codes standardly
-      translationCode = (testament === 'ot' || testament === 'Old Testament') ? 'WLC' : 'TR';
-    } else {
-      // Map frontend version names to Bolls Life codes
-      const versionMap = {
-        'KJV': 'KJV',
-        'WEB': 'WEB',
-        'BBE': 'BSB',
-        'ASV': 'ASV',
-        'YLT': 'YLT',
-        'JPKJV': 'JPKJV',
-        'CUV': 'CUV',
-        'RVR': 'BTX3',
-        'VUL': 'VUlG'
-      };
-      translationCode = versionMap[version] || 'KJV';
-    }
-
-    // 2. Construct Bolls Life URL
-    // Format: https://bolls.life/get-chapter/{translation}/{book_id}/{chapter}/
-    // We pass the 'book' parameter directly. The frontend must now send IDs (1-66) 
-    // or valid Bolls abbreviations (GEN, EXO).
-    const url = `https://bolls.life/get-chapter/${translationCode}/${book}/${chapter}/`;
+    // Format: https://bolls.life/get-chapter/{translation}/{book_id 1-66}/{chapter}/
+    const url = `https://bolls.life/get-chapter/${translationCode}/${bookNum}/${chapterNum}/`;
     
     console.log('Fetching from Bolls:', url);
 
@@ -74,20 +59,12 @@ exports.handler = async (event, context) => {
 
     const data = await response.json();
 
-    // 3. Normalize Data
-    // Bolls returns an array of objects. We return it as-is or wrapped.
-    // The frontend expects { verses: [...] } or just the array depending on previous logic.
-    // Let's return a consistent structure matching what your frontend consumes.
-    
-    // Bolls structure: [{ pk: 1, verse: 1, text: "..." }, ...]
-    // Your frontend expects: { verses: [ ... ] } in some places, so let's wrap it to be safe 
-    // OR update frontend to handle the array. 
-    // To match your existing renderVerses, let's return the object structure it expects.
-    
+    // Bolls returns [{ pk, verse, text }, ...]; text may contain HTML (footnotes,
+    // Strong's numbers). The frontend strips and escapes it before display.
     const formattedData = {
-        verses: data.map(v => ({
+        verses: (Array.isArray(data) ? data : []).map(v => ({
             verse: v.verse,
-            text: v.text_html || v.text // Bolls often sends HTML text
+            text: v.text_html || v.text || ''
         }))
     };
 

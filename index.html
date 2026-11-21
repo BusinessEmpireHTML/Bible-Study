@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bible Study</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <style>
         body {
             background: linear-gradient(to bottom right, #020617, #0f172a, #020617);
@@ -228,13 +227,13 @@
                     <select id="translation-select" onchange="changeTranslation()" class="bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-amber-500">
                        <option value="KJV">KJV - King James Version</option>
                        <option value="WEB">WEB - World English Bible</option>
-                       <option value="BBE">BSB - Berean Standard Bible</option>
+                       <option value="BSB">BSB - Berean Standard Bible</option>
                        <option value="ASV">ASV - American Standard Version</option>
                        <option value="YLT">YLT - Young's Literal Translation</option>
                        <option value="JPKJV">JPKJV - Japanese Colloquial Bible</option>
                        <option value="CUV">CUV - Chinese Union Version</option>
-                       <option value="RVR">BTX3 - La Biblia Textual 3ra Edicion</option>
-                       <option value="VUL">VULG - Latin Vulgate</option>
+                       <option value="BTX3">BTX3 - La Biblia Textual 3ra Edicion</option>
+                       <option value="VULG">VULG - Latin Vulgate</option>
                     </select>
                 </div>
             </div>
@@ -244,25 +243,22 @@
     </div>
 
     <script>
-    // State management
+    // STATE ========================================================
     let state = {
         selectedTestament: null,
-        selectedBook: null, // This will now hold the full object from our merged data
+        selectedBook: null,      // Book object: { id, canonical, chapters, wlc, tr, ... }
         selectedChapter: null,
         selectedVerse: null,
-        selectedVerseText: '',
         notes: {},
         highlights: {},
-        currentNote: '',
         selectedTranslation: 'WEB',
         versesCache: {},
-        currentVerses: {},
+        currentVerses: {},       // verse number -> plain text (for the notes modal)
         highlightingVerse: null,
-        bookMap: null // Will hold the loaded universalBookMap
+        bookMap: null            // Loaded universalBookMap.json (optional extras)
     };
 
-    // Hardcoded Chapter Counts (kept for structure, will be merged with JSON map)
-    // Note: We only need the Name (to match the map) and the Chapters count.
+    // Book order matches bolls.life IDs: Genesis = 1 ... Malachi = 39, Matthew = 40 ... Revelation = 66.
     const oldTestamentBase = [
         { name: 'Genesis', chapters: 50 }, { name: 'Exodus', chapters: 40 }, { name: 'Leviticus', chapters: 27 },
         { name: 'Numbers', chapters: 36 }, { name: 'Deuteronomy', chapters: 34 }, { name: 'Joshua', chapters: 24 },
@@ -291,9 +287,9 @@
         { name: '3 John', chapters: 1 }, { name: 'Jude', chapters: 1 }, { name: 'Revelation', chapters: 22 }
     ];
 
-    // These will be populated after loading the JSON
     let oldTestament = [];
     let newTestament = [];
+
     const highlightColors = {
         yellow: 'rgba(251, 191, 36, 0.4)', green: 'rgba(34, 197, 94, 0.4)', blue: 'rgba(59, 130, 246, 0.4)',
         purple: 'rgba(168, 85, 247, 0.4)', pink: 'rgba(236, 72, 153, 0.4)', red: 'rgba(239, 68, 68, 0.4)',
@@ -301,191 +297,178 @@
         lime: 'rgba(132, 204, 22, 0.4)'
     };
 
+    // Translation code -> field in universalBookMap.json holding the book's name in that language.
+    const localizedNameField = { JPKJV: 'japanese', CUV: 'cuv', BTX3: 'rvr', VULG: 'vul' };
+
+    const chevron = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+
     window.onload = async function() {
         showLoading();
-        await loadBookMap(); // Load JSON
-        initializeBookData(); // Merge JSON with Chapter counts
+        await loadBookMap();
+        initializeBookData();
         loadNotes();
         loadHighlights();
         updateHighlightsCount();
         hideLoading();
     };
 
-    // Load the universalBookMap.json file
+    // DATA SETUP ===================================================
+
     async function loadBookMap() {
         try {
             const response = await fetch('universalBookMap.json');
-            if (!response.ok) throw new Error('Failed to load book map');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             state.bookMap = await response.json();
-            console.log("Book Map Loaded", state.bookMap);
         } catch (e) {
-            console.error("Could not load universalBookMap.json", e);
-            // Fallback: alert user or handle gracefully
+            // Not fatal: books still work, just without Hebrew/Greek/localized names.
+            console.warn('Could not load universalBookMap.json; continuing without book name translations.', e);
+            state.bookMap = null;
         }
     }
 
-    // Merge the loaded JSON map with our hardcoded chapter counts
+    // Build the book lists. IDs come from the book's position, so this works even if the map failed to load.
     function initializeBookData() {
-        if (!state.bookMap) return;
-
-        // Helper to find map entry by canonical name
-        const findMapEntry = (name) => {
-            // The JSON keys are IDs "1", "2"... 
-            // We search values for matching canonical name
-            for (const [id, data] of Object.entries(state.bookMap)) {
-                if (data.canonical === name) return { id, ...data };
-            }
-            return null;
-        };
-
-        oldTestament = oldTestamentBase.map(book => {
-            const mapData = findMapEntry(book.name);
-            return { ...book, ...mapData }; // Merge chapters with ID/Aliases/Foreign names
+        const mapEntries = state.bookMap || {};
+        const build = (base, offset) => base.map((book, i) => {
+            const id = String(offset + i + 1);
+            const mapData = mapEntries[id] || {};
+            return { ...mapData, id, canonical: book.name, chapters: book.chapters };
         });
-
-        newTestament = newTestamentBase.map(book => {
-            const mapData = findMapEntry(book.name);
-            return { ...book, ...mapData };
-        });
+        oldTestament = build(oldTestamentBase, 0);
+        newTestament = build(newTestamentBase, oldTestamentBase.length);
     }
 
-    // UI HELPER FUNCTIONS ==========================================
+    // HELPERS ======================================================
+
     function showLoading() { document.getElementById('loading').classList.remove('hidden'); }
     function hideLoading() { document.getElementById('loading').classList.add('hidden'); }
 
-    // API FUNCTIONS ================================================
-    
-    // Fetch Verses (Standard)
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Turn API HTML into plain text: drop Strong's numbers (<S>) and footnotes (<sup>), strip all other tags.
+    function toPlainText(html) {
+        const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+        doc.querySelectorAll('s, sup').forEach(el => el.remove());
+        return doc.body.textContent.replace(/\s+/g, ' ').trim();
+    }
+
+    function originalNameFor(book, testament) {
+        return testament === 'Old Testament' ? book.wlc : book.tr;
+    }
+
+    function verseKeyFor(verseNum) {
+        return `${state.selectedBook.canonical}-${state.selectedChapter}-${verseNum}`;
+    }
+
+    // Split "Book Name-Chapter-Verse" (book names may contain spaces or hyphens).
+    function parseVerseKey(key) {
+        const parts = key.split('-');
+        const verse = parts.pop();
+        const chapter = parts.pop();
+        return { book: parts.join('-'), chapter, verse };
+    }
+
+    // API ==========================================================
+
     async function fetchVerses(bookId, chapter, version) {
-        // Use ID for cache key
         const cacheKey = `${bookId}-${chapter}-${version}`;
         if (state.versesCache[cacheKey]) return state.versesCache[cacheKey];
 
         try {
-            // Pass the ID (e.g. "1") as the book parameter
-            const url = `/.netlify/functions/bible-proxy?book=${bookId}&chapter=${chapter}&version=${version}`;
+            // 'original-ot' / 'original-nt' request the Hebrew (WLC) / Greek (TR) text.
+            const query = version.startsWith('original-')
+                ? `type=original&testament=${version.slice('original-'.length)}`
+                : `version=${encodeURIComponent(version)}`;
+            const url = `/.netlify/functions/bible-proxy?book=${bookId}&chapter=${chapter}&${query}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`API Error: ${response.status}`);
-            
             const data = await response.json();
-            state.versesCache[cacheKey] = data;
-            return data;
+            if (!data || !Array.isArray(data.verses) || data.verses.length === 0) return null;
+            state.versesCache[cacheKey] = data.verses;
+            return data.verses;
         } catch (error) {
             console.error('API Error:', error);
             return null;
         }
     }
 
-    // Fetch Original Language
-    async function fetchOriginalLanguage(bookId, chapter, testament) {
-        const cacheKey = `${bookId}-${chapter}-original`;
-        if (state.versesCache[cacheKey]) return state.versesCache[cacheKey];
-
-        try {
-            // Pass ID, type=original, and testament (for OT/NT logic in backend)
-            // Testament string needs to be simplified for the backend 'ot'/'nt' check if needed, 
-            // though our new proxy handles "Old Testament" string fine.
-            const tCode = testament === 'Old Testament' ? 'ot' : 'nt';
-            const url = `/.netlify/functions/bible-proxy?book=${bookId}&chapter=${chapter}&type=original&testament=${tCode}`;
-            
-            const response = await fetch(url);
-            if (!response.ok) return null;
-
-            const data = await response.json();
-            if (!data || !data.verses || data.verses.length === 0) return null;
-            
-            // Extract just the array from the wrapper we created in proxy
-            const versesArray = data.verses; 
-            state.versesCache[cacheKey] = versesArray;
-            return versesArray;
-        } catch (error) {
-            console.error('Original language API Error:', error);
-            return null;
-        }
+    function fetchOriginalLanguage(bookId, chapter, testament) {
+        return fetchVerses(bookId, chapter, testament === 'Old Testament' ? 'original-ot' : 'original-nt');
     }
 
-    // CORE RENDER LOGIC ============================================
+    // RENDERING ====================================================
 
-    // Modified Update Breadcrumb to show Japanese name if applicable
     function updateBreadcrumb() {
         const breadcrumb = document.getElementById('breadcrumb');
         let html = '';
-        
+
         if (state.selectedTestament) {
             html += `<span class="text-amber-400">${state.selectedTestament}</span>`;
             if (state.selectedBook) {
-                html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
-                
-                // Determine original name
-                const originalName = state.selectedTestament === 'Old Testament' 
-                    ? state.selectedBook.wlc 
-                    : state.selectedBook.tr;
+                const book = state.selectedBook;
+                const originalName = originalNameFor(book, state.selectedTestament);
+                const localField = state.selectedChapter ? localizedNameField[state.selectedTranslation] : null;
+                const localName = localField ? book[localField] : null;
 
-                // Format: "Genesis (בראשית)"
-                const displayName = originalName 
-                    ? `${state.selectedBook.canonical} <span class="text-slate-400 font-serif">(${originalName})</span>`
-                    : state.selectedBook.canonical;
-                
-                html += `<span class="text-amber-400">${displayName}</span>`;
-                
+                const extras = [originalName, localName].filter(Boolean).map(escapeHtml);
+                const displayName = extras.length
+                    ? `${escapeHtml(book.canonical)} <span class="text-slate-400 font-serif">(${extras.join(' · ')})</span>`
+                    : escapeHtml(book.canonical);
+
+                html += chevron + `<span class="text-amber-400">${displayName}</span>`;
+
                 if (state.selectedChapter) {
-                    html += '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
-                    html += `<span class="text-amber-400">Chapter ${state.selectedChapter}</span>`;
+                    html += chevron + `<span class="text-amber-400">Chapter ${state.selectedChapter}</span>`;
                 }
             }
         }
         breadcrumb.innerHTML = html;
     }
 
-    // Render Verses Function
     async function renderVerses() {
         const contentArea = document.getElementById('content-area');
-        updateBreadcrumb(); // Update breadcrumb in case translation changed (for JP name)
+        updateBreadcrumb();
         showLoading();
 
-        // 1. Fetch Main Translation
-        // Note: passing state.selectedBook.id (the number from JSON map)
-        const data = await fetchVerses(state.selectedBook.id, state.selectedChapter, state.selectedTranslation);
-        
-        // 2. Fetch Original Language
-        const originalData = await fetchOriginalLanguage(state.selectedBook.id, state.selectedChapter, state.selectedTestament);
-        
+        const [verses, originalVerses] = await Promise.all([
+            fetchVerses(state.selectedBook.id, state.selectedChapter, state.selectedTranslation),
+            fetchOriginalLanguage(state.selectedBook.id, state.selectedChapter, state.selectedTestament)
+        ]);
+
         hideLoading();
 
-        if (!data || !data.verses || data.verses.length === 0) {
+        if (!verses) {
             contentArea.innerHTML = `<div class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-8 text-center text-slate-400"><p>Unable to load verses.</p></div>`;
             return;
         }
 
-        // Reset current verses for notes
+        // Match original-language lines by verse number, not array position.
+        const originalByVerse = {};
+        (originalVerses || []).forEach(v => { originalByVerse[v.verse] = toPlainText(v.text); });
+
+        const isOT = state.selectedTestament === 'Old Testament';
         state.currentVerses = {};
-        data.verses.forEach(v => { state.currentVerses[v.verse] = v.text; });
 
         contentArea.innerHTML = `
             <div class="bg-slate-900/50 border border-slate-800/50 rounded-lg p-8 text-slate-200 leading-relaxed text-lg shadow-xl">
-                ${data.verses.map(verse => {
-                    const bookName = state.selectedBook.canonical;
-                    const chapterNum = state.selectedChapter;
-                    const verseKey = `${bookName}-${chapterNum}-${verse.verse}`;
+                ${verses.map(verse => {
+                    const text = toPlainText(verse.text);
+                    state.currentVerses[verse.verse] = text;
+
+                    const verseKey = verseKeyFor(verse.verse);
                     const hasNotes = state.notes[verseKey];
                     const highlight = state.highlights[verseKey];
                     const highlightStyle = highlight ? `background-color: ${highlightColors[highlight]}; padding: 2px 4px; border-radius: 3px;` : '';
-                    
-                    // Original Text Logic
-                    let originalText = '';
-                    if (originalData && originalData[verse.verse - 1]) {
-                        // Support both raw object (Bolls direct) or normalized wrapper
-                        const verseData = originalData[verse.verse - 1];
-                        originalText = verseData.text || verseData.verse || '';
-                    }
-                    
-                    // Clean up HTML tags if present (Bolls sometimes sends HTML)
-                    const cleanText = verse.text.replace(/<[^>]*>/g, '');
+                    const originalText = originalByVerse[verse.verse] || '';
 
                     return `
                         <div class="verse-wrapper">
                             <sup class="verse-number">${verse.verse}</sup>
-                            <span class="verse-content ${highlight ? 'verse-highlighted' : ''}" style="${highlightStyle}" data-verse="${verse.verse}">${cleanText}</span>
+                            <span class="verse-content ${highlight ? 'verse-highlighted' : ''}" style="${highlightStyle}" data-verse="${verse.verse}">${escapeHtml(text)}</span>
                             <span class="verse-actions">
                                 <button onclick="openHighlightModal(${verse.verse})" class="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-slate-700/50 ${highlight ? 'text-amber-400' : 'text-slate-500 hover:text-amber-400'}">
                                     <svg class="w-3.5 h-3.5" fill="${highlight ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
@@ -500,8 +483,8 @@
                             </span>
                             ${originalText ? `
                                 <div class="mt-2 ml-6 text-base text-slate-400 italic border-l-2 border-slate-700 pl-3">
-                                    <span class="text-xs text-amber-400 font-semibold">${state.selectedTestament === 'Old Testament' ? 'Hebrew' : 'Greek'}:</span>
-                                    <span class="font-serif" dir="${state.selectedTestament === 'Old Testament' ? 'rtl' : 'ltr'}">${originalText}</span>
+                                    <span class="text-xs text-amber-400 font-semibold">${isOT ? 'Hebrew' : 'Greek'}:</span>
+                                    <span class="font-serif" dir="${isOT ? 'rtl' : 'ltr'}">${escapeHtml(originalText)}</span>
                                 </div>
                             ` : ''}
                         </div>
@@ -511,61 +494,19 @@
         `;
     }
 
-    // NAVIGATION & UTILS ===========================================
-    // (Keep your existing navigation functions: selectTestament, selectBook, selectChapter...)
-    // (Keep your existing Note/Highlight modal functions...)
-    
-    // NOTE: Ensure selectBook uses the object passed to it
-    function selectBook(book) {
-        state.selectedBook = book;
-        document.getElementById('book-selection').classList.add('hidden');
-        document.getElementById('chapter-selection').classList.remove('hidden');
-        updateBreadcrumb();
-        renderChapters();
-    }
-    
-    // Existing functions need to be preserved below this point...
-    // (Paste the rest of your original functions here: renderBooks, renderChapters, 
-    // selectChapter, changeTranslation, openNotesModal, etc. unchanged)
-
-    // RE-Paste: renderBooks needs to use the dynamic state arrays
     function renderBooks() {
         const grid = document.getElementById('books-grid');
         const books = state.selectedTestament === 'Old Testament' ? oldTestament : newTestament;
-        
-        grid.innerHTML = books.map(book => {
-            // Determine original language name based on Testament
-            // wlc = Hebrew (Westminster Leningrad Codex)
-            // tr = Greek (Textus Receptus)
-            const originalName = state.selectedTestament === 'Old Testament' 
-                ? book.wlc 
-                : book.tr;
 
-            return `
-            <button onclick='selectBook(${JSON.stringify(book).replace(/'/g, "&#39;")})' class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-4 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50">
-                <div class="font-semibold">${book.canonical}</div>
-                <div class="text-xs text-amber-500/80 mt-1 font-serif">${originalName || ''}</div> 
+        grid.innerHTML = books.map((book, index) => `
+            <button onclick="selectBook(${index})" class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-4 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50">
+                <div class="font-semibold">${escapeHtml(book.canonical)}</div>
+                <div class="text-xs text-amber-500/80 mt-1 font-serif">${escapeHtml(originalNameFor(book, state.selectedTestament) || '')}</div>
                 <div class="text-sm text-slate-400 mt-2">${book.chapters} chapters</div>
             </button>
-            `;
-        }).join('');
+        `).join('');
     }
 
-    // Standard re-implementations of existing small functions
-    function selectTestament(testament) {
-        state.selectedTestament = testament;
-        document.getElementById('testament-selection').classList.add('hidden');
-        document.getElementById('book-selection').classList.remove('hidden');
-        updateBreadcrumb();
-        renderBooks();
-    }
-    function goBackToTestament() {
-        state.selectedTestament = null;
-        state.selectedBook = null;
-        document.getElementById('book-selection').classList.add('hidden');
-        document.getElementById('testament-selection').classList.remove('hidden');
-        updateBreadcrumb();
-    }
     function renderChapters() {
         const grid = document.getElementById('chapters-grid');
         const chapters = Array.from({ length: state.selectedBook.chapters }, (_, i) => i + 1);
@@ -575,15 +516,43 @@
             </button>
         `).join('');
     }
+
+    // NAVIGATION ===================================================
+
+    function selectTestament(testament) {
+        state.selectedTestament = testament;
+        document.getElementById('testament-selection').classList.add('hidden');
+        document.getElementById('book-selection').classList.remove('hidden');
+        updateBreadcrumb();
+        renderBooks();
+    }
+
+    function selectBook(index) {
+        const books = state.selectedTestament === 'Old Testament' ? oldTestament : newTestament;
+        state.selectedBook = books[index];
+        document.getElementById('book-selection').classList.add('hidden');
+        document.getElementById('chapter-selection').classList.remove('hidden');
+        updateBreadcrumb();
+        renderChapters();
+    }
+
     function selectChapter(chapter) {
         state.selectedChapter = chapter;
         state.selectedVerse = null;
         document.getElementById('chapter-selection').classList.add('hidden');
         document.getElementById('chapter-view').classList.remove('hidden');
-        updateBreadcrumb();
         document.getElementById('translation-select').value = state.selectedTranslation;
         renderVerses();
     }
+
+    function goBackToTestament() {
+        state.selectedTestament = null;
+        state.selectedBook = null;
+        document.getElementById('book-selection').classList.add('hidden');
+        document.getElementById('testament-selection').classList.remove('hidden');
+        updateBreadcrumb();
+    }
+
     function goBackToBooks() {
         state.selectedBook = null;
         state.selectedChapter = null;
@@ -591,6 +560,7 @@
         document.getElementById('book-selection').classList.remove('hidden');
         updateBreadcrumb();
     }
+
     function goBackToChapters() {
         state.selectedChapter = null;
         state.selectedVerse = null;
@@ -598,79 +568,80 @@
         document.getElementById('chapter-selection').classList.remove('hidden');
         updateBreadcrumb();
     }
+
     function changeTranslation() {
-        const select = document.getElementById('translation-select');
-        state.selectedTranslation = select.value;
+        state.selectedTranslation = document.getElementById('translation-select').value;
         renderVerses();
     }
-    
-    // ... Keep all Note/Highlight functions (loadNotes, saveNotesToStorage, openNotesModal, etc.) exactly as they were ...
-    
-    function loadNotes() {
-        const saved = localStorage.getItem('bible-notes');
-        if (saved) state.notes = JSON.parse(saved);
+
+    // STORAGE ======================================================
+
+    function readStorage(key) {
+        try {
+            const saved = localStorage.getItem(key);
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            console.warn(`Could not read ${key} from localStorage`, e);
+            return {};
+        }
     }
-    function saveNotesToStorage() {
-        localStorage.setItem('bible-notes', JSON.stringify(state.notes));
+
+    function writeStorage(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.warn(`Could not save ${key} to localStorage`, e);
+        }
     }
-    function loadHighlights() {
-        const saved = localStorage.getItem('bible-highlights');
-        if (saved) state.highlights = JSON.parse(saved);
-    }
-    function saveHighlights() {
-        localStorage.setItem('bible-highlights', JSON.stringify(state.highlights));
-    }
-    
-    // ... Paste the rest of your UI helper functions (openNotesModal, closeNotesModal, saveNote, openHighlightModal, selectHighlight, etc.) ...
-    // These do not need logic changes, just ensure they are present in the final file.
-    
+
+    function loadNotes() { state.notes = readStorage('bible-notes'); }
+    function saveNotesToStorage() { writeStorage('bible-notes', state.notes); }
+    function loadHighlights() { state.highlights = readStorage('bible-highlights'); }
+    function saveHighlights() { writeStorage('bible-highlights', state.highlights); }
+
+    // NOTES ========================================================
+
     function openNotesModal(verseNum) {
         state.selectedVerse = verseNum;
-        const bookName = state.selectedBook.canonical; // Changed from .name to .canonical
-        const chapterNum = state.selectedChapter;
-        const verseKey = `${bookName}-${chapterNum}-${verseNum}`;
-        document.getElementById('notes-verse-title').textContent = `Notes - ${bookName} ${chapterNum}:${verseNum}`;
+        const verseKey = verseKeyFor(verseNum);
+        document.getElementById('notes-verse-title').textContent = `Notes - ${state.selectedBook.canonical} ${state.selectedChapter}:${verseNum}`;
         document.getElementById('notes-verse-text').textContent = state.currentVerses[verseNum] || '';
         document.getElementById('note-textarea').value = state.notes[verseKey] || '';
         document.getElementById('notes-modal').classList.remove('hidden');
     }
-    
+
     function closeNotesModal() {
         document.getElementById('notes-modal').classList.add('hidden');
         state.selectedVerse = null;
     }
 
     function saveNote() {
-        const textarea = document.getElementById('note-textarea');
-        const bookName = state.selectedBook.canonical; // Changed from .name to .canonical
-        const chapterNum = state.selectedChapter;
-        const verseKey = `${bookName}-${chapterNum}-${state.selectedVerse}`;
-        state.notes[verseKey] = textarea.value;
+        const verseKey = verseKeyFor(state.selectedVerse);
+        const value = document.getElementById('note-textarea').value;
+        if (value.trim()) state.notes[verseKey] = value;
+        else delete state.notes[verseKey];
         saveNotesToStorage();
         closeNotesModal();
         renderVerses();
     }
 
-    // Modal Closing Logic
-    document.getElementById('notes-modal').addEventListener('click', function(e) { if (e.target === this) closeNotesModal(); });
-    document.getElementById('highlight-modal').addEventListener('click', function(e) { if (e.target === this) closeHighlightModal(); });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeNotesModal(); closeHighlightModal();
-            if (!document.getElementById('highlights-panel').classList.contains('hidden')) toggleHighlightsPanel();
-        }
-    });
+    // HIGHLIGHTS ===================================================
 
-    function openHighlightModal(verseNum) { state.highlightingVerse = verseNum; document.getElementById('highlight-modal').classList.remove('hidden'); }
-    function closeHighlightModal() { document.getElementById('highlight-modal').classList.add('hidden'); state.highlightingVerse = null; }
+    function openHighlightModal(verseNum) {
+        state.highlightingVerse = verseNum;
+        document.getElementById('highlight-modal').classList.remove('hidden');
+    }
+
+    function closeHighlightModal() {
+        document.getElementById('highlight-modal').classList.add('hidden');
+        state.highlightingVerse = null;
+    }
 
     function selectHighlight(color) {
         if (!state.highlightingVerse) return;
-        const bookName = state.selectedBook.canonical; // Changed from .name to .canonical
-        const chapterNum = state.selectedChapter;
-        const verseKey = `${bookName}-${chapterNum}-${state.highlightingVerse}`;
-        if (state.highlights[verseKey] === color) { delete state.highlights[verseKey]; } 
-        else { state.highlights[verseKey] = color; }
+        const verseKey = verseKeyFor(state.highlightingVerse);
+        if (state.highlights[verseKey] === color) delete state.highlights[verseKey];
+        else state.highlights[verseKey] = color;
         saveHighlights();
         updateHighlightsCount();
         closeHighlightModal();
@@ -683,40 +654,38 @@
 
     function toggleHighlightsPanel() {
         const panel = document.getElementById('highlights-panel');
-        if (panel.classList.contains('hidden')) { panel.classList.remove('hidden'); renderHighlightsPanel(); } 
+        if (panel.classList.contains('hidden')) { panel.classList.remove('hidden'); renderHighlightsPanel(); }
         else { panel.classList.add('hidden'); }
     }
 
     function renderHighlightsPanel() {
         const content = document.getElementById('highlights-content');
         const highlights = Object.entries(state.highlights);
-        if (highlights.length === 0) { content.innerHTML = '<div class="text-slate-400 text-center py-8">No highlighted verses yet</div>'; return; }
-        
+        if (highlights.length === 0) {
+            content.innerHTML = '<div class="text-slate-400 text-center py-8">No highlighted verses yet</div>';
+            return;
+        }
+
         const grouped = {};
         highlights.forEach(([key, color]) => {
-            const parts = key.split('-');
-            // Handle book names that might contain hyphens? Current key format is "Name-Chapter-Verse"
-            // Better to reconstruct carefully
-            const verse = parts.pop();
-            const chapter = parts.pop();
-            const book = parts.join('-'); // Rejoin remainder in case book name had hyphen
-            
+            const { book, chapter, verse } = parseVerseKey(key);
             const bookChapter = `${book} ${chapter}`;
             if (!grouped[bookChapter]) grouped[bookChapter] = [];
             grouped[bookChapter].push({ verse, color, key });
         });
 
+        // Keys are passed via data attributes so book names never break the inline JS.
         content.innerHTML = Object.entries(grouped).map(([bookChapter, verses]) => `
             <div class="mb-4">
-                <h4 class="font-bold text-slate-300 mb-2">${bookChapter}</h4>
+                <h4 class="font-bold text-slate-300 mb-2">${escapeHtml(bookChapter)}</h4>
                 <div class="space-y-2">
                     ${verses.map(v => `
                         <div class="flex items-center gap-2 group">
-                            <div class="w-3 h-3 rounded flex-shrink-0" style="background-color: ${highlightColors[v.color]}"></div>
-                            <button onclick="goToVerse('${v.key}')" class="flex-1 text-left text-sm text-slate-300 hover:text-white transition-colors">
-                                Verse ${v.verse}
+                            <div class="w-3 h-3 rounded flex-shrink-0" style="background-color: ${highlightColors[v.color] || 'transparent'}"></div>
+                            <button data-key="${escapeHtml(v.key)}" onclick="goToVerse(this.dataset.key)" class="flex-1 text-left text-sm text-slate-300 hover:text-white transition-colors">
+                                Verse ${escapeHtml(v.verse)}
                             </button>
-                            <button onclick="removeHighlight('${v.key}')" class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all">
+                            <button data-key="${escapeHtml(v.key)}" onclick="removeHighlight(this.dataset.key)" class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
@@ -735,33 +704,29 @@
     }
 
     function goToVerse(verseKey) {
-        const parts = verseKey.split('-');
-        const verse = parts.pop();
-        const chapter = parseInt(parts.pop());
-        const bookName = parts.join('-');
-        
-        // Find Book Object
-        const allBooks = [...oldTestament, ...newTestament];
-        const book = allBooks.find(b => b.canonical === bookName); // Search by canonical name
-        
+        const { book: bookName, chapter, verse } = parseVerseKey(verseKey);
+        const otBook = oldTestament.find(b => b.canonical === bookName);
+        const book = otBook || newTestament.find(b => b.canonical === bookName);
         if (!book) return;
 
-        state.selectedTestament = oldTestament.includes(book) ? 'Old Testament' : 'New Testament';
+        state.selectedTestament = otBook ? 'Old Testament' : 'New Testament';
         state.selectedBook = book;
-        state.selectedChapter = chapter;
-        
+        state.selectedChapter = parseInt(chapter, 10);
+
         document.getElementById('testament-selection').classList.add('hidden');
         document.getElementById('book-selection').classList.add('hidden');
         document.getElementById('chapter-selection').classList.add('hidden');
         document.getElementById('chapter-view').classList.remove('hidden');
-        
-        updateBreadcrumb();
         document.getElementById('translation-select').value = state.selectedTranslation;
         toggleHighlightsPanel();
-        
+
+        // Pre-render the book and chapter grids so the "Back" buttons land on the right lists.
+        renderBooks();
+        renderChapters();
+
         renderVerses().then(() => {
             setTimeout(() => {
-                const verseElement = document.querySelector(`[data-verse="${verse}"]`);
+                const verseElement = document.querySelector(`[data-verse="${CSS.escape(verse)}"]`);
                 if (verseElement) {
                     verseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     verseElement.style.transition = 'all 0.3s';
@@ -772,7 +737,17 @@
         });
     }
 
-    eruda.init();
+    // MODAL CLOSING ================================================
+
+    document.getElementById('notes-modal').addEventListener('click', function(e) { if (e.target === this) closeNotesModal(); });
+    document.getElementById('highlight-modal').addEventListener('click', function(e) { if (e.target === this) closeHighlightModal(); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeNotesModal();
+            closeHighlightModal();
+            if (!document.getElementById('highlights-panel').classList.contains('hidden')) toggleHighlightsPanel();
+        }
+    });
 </script>
 </body>
 </html>
