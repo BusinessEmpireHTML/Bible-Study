@@ -1,123 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-reading-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bible Study</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background: linear-gradient(to bottom right, #020617, #0f172a, #020617);
-            min-height: 100vh;
-        }
-        
-        .verse-wrapper {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-        
-        .verse-text {
-            display: inline;
-        }
-        
-        .verse-number {
-            font-weight: 600;
-            color: #fbbf24;
-            font-size: 0.75rem;
-            vertical-align: super;
-            margin-right: 0.25rem;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .verse-content {
-            display: inline;
-            cursor: pointer;
-            padding: 2px 0;
-            transition: all 0.2s;
-        }
-        
-        .verse-content:hover {
-            background-color: rgba(251, 191, 36, 0.1);
-            border-radius: 3px;
-        }
-        
-        .verse-highlighted {
-            background-color: rgba(251, 191, 36, 0.25);
-            border-radius: 3px;
-            padding: 2px 4px;
-        }
-        
-        .verse-actions {
-            display: inline-flex;
-            gap: 0.25rem;
-            margin-left: 0.5rem;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        
-        .verse-wrapper:hover .verse-actions {
-            opacity: 1;
-        }
-        
-        .highlight-color {
-            width: 1rem;
-            height: 1rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        
-        .highlight-color:hover {
-            transform: scale(1.2);
-            border-color: white;
-        }
-    </style>
+    <meta name="description" content="Read, highlight and study the Bible with Hebrew and Greek lexicon tools.">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="text-white">
     <!-- Header -->
-    <div class="bg-slate-900/80 backdrop-blur-sm border-b border-slate-800/50 sticky top-0 z-10 shadow-xl">
-        <div class="max-w-7xl mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
+    <header class="bg-slate-900/80 backdrop-blur-sm border-b border-slate-800/50 sticky top-0 z-30 shadow-xl">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center gap-3">
+                <a href="#/" class="flex items-center gap-2 shrink-0" aria-label="Home">
                     <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
-                    <h1 class="text-2xl font-bold">Bible Study</h1>
-                </div>
-                
-                <button id="highlights-tab-btn" onclick="toggleHighlightsPanel()" class="flex items-center gap-2 bg-slate-800/50 hover:bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-700/50 transition-all">
-                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-                    </svg>
-                    <span>Highlights</span>
-                    <span id="highlights-count" class="bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
-                </button>
-            </div>
-            <div id="breadcrumb" class="flex items-center gap-2 mt-3 text-sm text-slate-300"></div>
-        </div>
-    </div>
+                    <h1 class="text-xl sm:text-2xl font-bold hidden sm:block">Bible Study</h1>
+                </a>
 
-    <!-- Highlights Panel -->
-    <div id="highlights-panel" class="hidden fixed top-20 right-4 w-96 max-h-[80vh] bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden z-50">
-        <div class="bg-slate-800/50 p-4 border-b border-slate-700/50 flex items-center justify-between">
-            <h3 class="font-bold text-white flex items-center gap-2">
-                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-                </svg>
-                Highlighted Verses
-            </h3>
-            <button onclick="toggleHighlightsPanel()" class="text-slate-400 hover:text-white">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+                <form id="search-form" class="flex-1 min-w-0" role="search">
+                    <input id="search-input" type="search" autocomplete="off"
+                        placeholder="Search or John 3:16"
+                        class="w-full bg-slate-800/70 border border-slate-700/60 rounded-lg px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500">
+                </form>
+
+                <nav class="flex items-center gap-1 sm:gap-2 shrink-0">
+                    <a href="#/plans" class="header-btn" title="Reading plans">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="hidden md:inline">Plans</span>
+                    </a>
+                    <button id="study-btn" class="header-btn" title="My highlights and notes">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                        <span class="hidden md:inline">My Study</span>
+                        <span id="study-count" class="bg-amber-500 text-slate-900 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </button>
+                    <button id="settings-btn" class="header-btn" title="Settings and backup">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </button>
+                </nav>
+            </div>
+            <nav id="breadcrumb" class="flex flex-wrap items-center gap-2 mt-2 text-sm text-slate-300 empty:hidden"></nav>
+        </div>
+    </header>
+
+    <!-- My Study panel (highlights + notes) -->
+    <aside id="study-panel" class="hidden fixed top-20 right-2 sm:right-4 left-2 sm:left-auto sm:w-[26rem] max-h-[80vh] bg-slate-900/95 backdrop-blur-sm border border-slate-700/50 rounded-lg shadow-2xl overflow-hidden z-40 flex flex-col">
+        <div class="bg-slate-800/50 p-3 border-b border-slate-700/50 flex items-center justify-between gap-2">
+            <div class="flex gap-1" role="tablist">
+                <button data-study-tab="highlights" class="study-tab">Highlights</button>
+                <button data-study-tab="notes" class="study-tab">Notes</button>
+            </div>
+            <button data-close="study-panel" class="text-slate-400 hover:text-white" aria-label="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <div id="highlights-content" class="overflow-y-auto max-h-[calc(80vh-5rem)] p-4">
-            <div class="text-slate-400 text-center py-8">No highlighted verses yet</div>
+        <div id="study-content" class="overflow-y-auto p-4 flex-1"></div>
+    </aside>
+
+    <!-- Lexicon panel (Strong's) -->
+    <aside id="lexicon-panel" class="hidden fixed top-0 right-0 h-full w-full sm:w-[28rem] bg-slate-900 border-l border-slate-700/60 shadow-2xl z-50 flex flex-col">
+        <div class="p-4 border-b border-slate-700/60 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <button id="lexicon-back" class="hidden text-amber-400 hover:text-amber-300 text-sm">← Back</button>
+                <h3 class="font-bold text-white">Lexicon</h3>
+            </div>
+            <button data-close="lexicon-panel" class="text-slate-400 hover:text-white" aria-label="Close">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-    </div>
+        <div id="lexicon-content" class="overflow-y-auto p-4 flex-1"></div>
+    </aside>
 
     <!-- Loading Indicator -->
     <div id="loading" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -130,624 +90,166 @@
         </div>
     </div>
 
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 text-white px-4 py-2 rounded-lg shadow-xl z-[60] text-sm"></div>
+
     <!-- Highlight Color Picker Modal -->
-    <div id="highlight-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div id="highlight-modal" class="modal hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 rounded-lg p-6 max-w-sm w-full">
             <h3 class="text-lg font-bold text-white mb-4">Choose Highlight Color</h3>
-            <div class="grid grid-cols-5 gap-3 mb-4">
-                <button onclick="selectHighlight('yellow')" class="highlight-color" style="background-color: rgba(251, 191, 36, 0.4);" title="Yellow"></button>
-                <button onclick="selectHighlight('green')" class="highlight-color" style="background-color: rgba(34, 197, 94, 0.4);" title="Green"></button>
-                <button onclick="selectHighlight('blue')" class="highlight-color" style="background-color: rgba(59, 130, 246, 0.4);" title="Blue"></button>
-                <button onclick="selectHighlight('purple')" class="highlight-color" style="background-color: rgba(168, 85, 247, 0.4);" title="Purple"></button>
-                <button onclick="selectHighlight('pink')" class="highlight-color" style="background-color: rgba(236, 72, 153, 0.4);" title="Pink"></button>
-                <button onclick="selectHighlight('red')" class="highlight-color" style="background-color: rgba(239, 68, 68, 0.4);" title="Red"></button>
-                <button onclick="selectHighlight('orange')" class="highlight-color" style="background-color: rgba(249, 115, 22, 0.4);" title="Orange"></button>
-                <button onclick="selectHighlight('teal')" class="highlight-color" style="background-color: rgba(20, 184, 166, 0.4);" title="Teal"></button>
-                <button onclick="selectHighlight('cyan')" class="highlight-color" style="background-color: rgba(6, 182, 212, 0.4);" title="Cyan"></button>
-                <button onclick="selectHighlight('lime')" class="highlight-color" style="background-color: rgba(132, 204, 22, 0.4);" title="Lime"></button>
+            <div id="highlight-colors" class="grid grid-cols-5 gap-3 mb-4"></div>
+            <div class="flex gap-2">
+                <button id="highlight-remove" class="flex-1 bg-slate-700 hover:bg-red-600/70 text-white py-2 rounded-lg transition-colors">Remove</button>
+                <button data-close="highlight-modal" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-colors">Cancel</button>
             </div>
-            <button onclick="closeHighlightModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-colors">
-                Cancel
-            </button>
         </div>
     </div>
-    <div id="notes-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div class="bg-slate-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+
+    <!-- Notes Modal -->
+    <div id="notes-modal" class="modal hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                    </svg>
+                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                     <span id="notes-verse-title">Notes</span>
                 </h3>
-                <button onclick="closeNotesModal()" class="text-slate-400 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+                <button data-close="notes-modal" class="text-slate-400 hover:text-white" aria-label="Close">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
             <div id="notes-verse-text" class="bg-slate-900/50 rounded-lg p-4 mb-4 text-slate-300 border border-slate-700/50"></div>
-            
-            <textarea 
-                id="note-textarea" 
-                class="w-full h-64 bg-slate-900/50 text-slate-200 border border-slate-600/50 rounded-lg p-3 resize-none focus:outline-none focus:border-amber-500 transition-colors mb-4" 
-                placeholder="Write your notes here..."
-            ></textarea>
-            
+            <textarea id="note-textarea"
+                class="w-full h-56 bg-slate-900/50 text-slate-200 border border-slate-600/50 rounded-lg p-3 resize-none focus:outline-none focus:border-amber-500 transition-colors mb-2"
+                placeholder="Write your notes here..."></textarea>
+            <p class="text-xs text-slate-500 mb-4">Tip: add tags like <span class="text-amber-400">#prayer</span> or <span class="text-amber-400">#promises</span> to find notes later.</p>
             <div class="flex gap-3">
-                <button onclick="saveNote()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition-colors">
-                    Save Note
-                </button>
-                <button onclick="closeNotesModal()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                    Cancel
-                </button>
+                <button id="note-save" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-lg font-medium transition-colors">Save Note</button>
+                <button id="note-delete" class="bg-slate-700 hover:bg-red-600/70 text-white px-4 py-3 rounded-lg font-medium transition-colors">Delete</button>
+                <button data-close="notes-modal" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">Cancel</button>
             </div>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 py-6">
-        <!-- Testament Selection -->
-        <div id="testament-selection" class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mt-12">
-            <button onclick="selectTestament('Old Testament')" class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white p-8 rounded-xl shadow-lg transition-all transform hover:scale-105">
-                <h2 class="text-2xl font-bold mb-2">Old Testament</h2>
-                <p class="text-amber-100">Hebrew Scriptures</p>
-            </button>
-            <button onclick="selectTestament('New Testament')" class="bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white p-8 rounded-xl shadow-lg transition-all transform hover:scale-105">
-                <h2 class="text-2xl font-bold mb-2">New Testament</h2>
-                <p class="text-blue-100">Greek Scriptures</p>
-            </button>
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-white">Settings</h3>
+                <button data-close="settings-modal" class="text-slate-400 hover:text-white" aria-label="Close">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <h4 class="text-sm font-semibold text-amber-400 uppercase tracking-wide mb-3">Reading</h4>
+            <label class="block mb-4">
+                <span class="flex justify-between text-sm text-slate-300 mb-1">Text size <span id="font-size-value"></span></span>
+                <input id="setting-font-size" type="range" min="14" max="28" step="1" class="w-full accent-amber-500">
+            </label>
+            <div class="mb-4">
+                <span class="block text-sm text-slate-300 mb-1">Font</span>
+                <div class="segmented" data-setting="fontFamily">
+                    <button data-value="sans">Sans-serif</button>
+                    <button data-value="serif" class="font-serif">Serif</button>
+                </div>
+            </div>
+            <div class="mb-6">
+                <span class="block text-sm text-slate-300 mb-1">Reading theme</span>
+                <div class="segmented" data-setting="readingTheme">
+                    <button data-value="dark">Dark</button>
+                    <button data-value="sepia">Sepia</button>
+                    <button data-value="light">Light</button>
+                </div>
+            </div>
+
+            <h4 class="text-sm font-semibold text-amber-400 uppercase tracking-wide mb-3">Backup</h4>
+            <p class="text-sm text-slate-400 mb-1">Your highlights, notes and plan progress are saved in this browser only. Export a backup to keep them safe or move them to another device.</p>
+            <p id="backup-status" class="text-xs text-slate-500 mb-3"></p>
+            <div class="flex gap-3 mb-3">
+                <button id="export-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg font-medium transition-colors">Export backup</button>
+                <label class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-medium transition-colors text-center cursor-pointer">
+                    Import backup
+                    <input id="import-file" type="file" accept="application/json,.json" class="hidden">
+                </label>
+            </div>
+            <div id="import-confirm" class="hidden bg-slate-900/60 border border-slate-700 rounded-lg p-3">
+                <p id="import-summary" class="text-sm text-slate-300 mb-3"></p>
+                <div class="flex gap-2">
+                    <button id="import-merge" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-medium">Merge with mine</button>
+                    <button id="import-replace" class="flex-1 bg-slate-700 hover:bg-red-600/70 text-white py-2 rounded-lg text-sm font-medium">Replace mine</button>
+                    <button id="import-cancel" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-sm">Cancel</button>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Home -->
+        <section id="view-home" class="view hidden">
+            <div id="home-extras" class="max-w-3xl mx-auto space-y-3"></div>
+            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mt-8">
+                <a href="#/ot" class="block bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white p-8 rounded-xl shadow-lg transition-all transform hover:scale-105 text-center">
+                    <h2 class="text-2xl font-bold mb-2">Old Testament</h2>
+                    <p class="text-amber-100">Hebrew Scriptures</p>
+                </a>
+                <a href="#/nt" class="block bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white p-8 rounded-xl shadow-lg transition-all transform hover:scale-105 text-center">
+                    <h2 class="text-2xl font-bold mb-2">New Testament</h2>
+                    <p class="text-blue-100">Greek Scriptures</p>
+                </a>
+            </div>
+        </section>
 
         <!-- Book Selection -->
-        <div id="book-selection" class="hidden">
-            <button onclick="goBackToTestament()" class="text-amber-400 hover:text-amber-300 mb-4 flex items-center gap-2">
-                ← Back to Testament Selection
-            </button>
+        <section id="view-books" class="view hidden">
+            <a href="#/" class="back-link">← Back to Testament Selection</a>
             <div id="books-grid" class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
-        </div>
+        </section>
 
         <!-- Chapter Selection -->
-        <div id="chapter-selection" class="hidden">
-            <button onclick="goBackToBooks()" class="text-amber-400 hover:text-amber-300 mb-4 flex items-center gap-2">
-                ← Back to Book Selection
-            </button>
+        <section id="view-chapters" class="view hidden">
+            <a id="chapters-back" href="#/" class="back-link">← Back to Book Selection</a>
             <div id="chapters-grid" class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2"></div>
-        </div>
+        </section>
 
         <!-- Chapter View -->
-        <div id="chapter-view" class="hidden">
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <button onclick="goBackToChapters()" class="text-amber-400 hover:text-amber-300 flex items-center gap-2">
-                    ← Back to Chapter Selection
-                </button>
-                
+        <section id="view-chapter" class="view hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <a id="chapter-back" href="#/" class="back-link !mb-0">← Back to Chapter Selection</a>
                 <div class="flex flex-wrap gap-2 items-center">
-                    <label class="text-slate-300 text-sm">Translation:</label>
-                    <select id="translation-select" onchange="changeTranslation()" class="bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-amber-500">
-                       <option value="KJV">KJV - King James Version</option>
-                       <option value="WEB">WEB - World English Bible</option>
-                       <option value="BSB">BSB - Berean Standard Bible</option>
-                       <option value="ASV">ASV - American Standard Version</option>
-                       <option value="YLT">YLT - Young's Literal Translation</option>
-                       <option value="JPKJV">JPKJV - Japanese Colloquial Bible</option>
-                       <option value="CUV">CUV - Chinese Union Version</option>
-                       <option value="BTX3">BTX3 - La Biblia Textual 3ra Edicion</option>
-                       <option value="VULG">VULG - Latin Vulgate</option>
-                    </select>
+                    <label class="text-slate-300 text-sm" for="translation-select">Translation:</label>
+                    <select id="translation-select" class="select"></select>
+                    <label class="text-slate-300 text-sm" for="compare-select">Compare:</label>
+                    <select id="compare-select" class="select"></select>
+                    <label class="flex items-center gap-2 text-sm text-slate-300 bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 cursor-pointer" title="Show Strong's numbers (e-Sword style)">
+                        <input id="strongs-toggle" type="checkbox" class="accent-amber-500">
+                        Strong's
+                    </label>
                 </div>
             </div>
-
+            <div class="chapter-nav max-w-4xl mx-auto mb-3"></div>
             <div id="content-area" class="max-w-4xl mx-auto"></div>
-        </div>
-    </div>
-
-    <script>
-    // STATE ========================================================
-    let state = {
-        selectedTestament: null,
-        selectedBook: null,      // Book object: { id, canonical, chapters, wlc, tr, ... }
-        selectedChapter: null,
-        selectedVerse: null,
-        notes: {},
-        highlights: {},
-        selectedTranslation: 'WEB',
-        versesCache: {},
-        currentVerses: {},       // verse number -> plain text (for the notes modal)
-        highlightingVerse: null,
-        bookMap: null            // Loaded universalBookMap.json (optional extras)
-    };
-
-    // Book order matches bolls.life IDs: Genesis = 1 ... Malachi = 39, Matthew = 40 ... Revelation = 66.
-    const oldTestamentBase = [
-        { name: 'Genesis', chapters: 50 }, { name: 'Exodus', chapters: 40 }, { name: 'Leviticus', chapters: 27 },
-        { name: 'Numbers', chapters: 36 }, { name: 'Deuteronomy', chapters: 34 }, { name: 'Joshua', chapters: 24 },
-        { name: 'Judges', chapters: 21 }, { name: 'Ruth', chapters: 4 }, { name: '1 Samuel', chapters: 31 },
-        { name: '2 Samuel', chapters: 24 }, { name: '1 Kings', chapters: 22 }, { name: '2 Kings', chapters: 25 },
-        { name: '1 Chronicles', chapters: 29 }, { name: '2 Chronicles', chapters: 36 }, { name: 'Ezra', chapters: 10 },
-        { name: 'Nehemiah', chapters: 13 }, { name: 'Esther', chapters: 10 }, { name: 'Job', chapters: 42 },
-        { name: 'Psalms', chapters: 150 }, { name: 'Proverbs', chapters: 31 }, { name: 'Ecclesiastes', chapters: 12 },
-        { name: 'Song of Solomon', chapters: 8 }, { name: 'Isaiah', chapters: 66 }, { name: 'Jeremiah', chapters: 52 },
-        { name: 'Lamentations', chapters: 5 }, { name: 'Ezekiel', chapters: 48 }, { name: 'Daniel', chapters: 12 },
-        { name: 'Hosea', chapters: 14 }, { name: 'Joel', chapters: 3 }, { name: 'Amos', chapters: 9 },
-        { name: 'Obadiah', chapters: 1 }, { name: 'Jonah', chapters: 4 }, { name: 'Micah', chapters: 7 },
-        { name: 'Nahum', chapters: 3 }, { name: 'Habakkuk', chapters: 3 }, { name: 'Zephaniah', chapters: 3 },
-        { name: 'Haggai', chapters: 2 }, { name: 'Zechariah', chapters: 14 }, { name: 'Malachi', chapters: 4 }
-    ];
-
-    const newTestamentBase = [
-        { name: 'Matthew', chapters: 28 }, { name: 'Mark', chapters: 16 }, { name: 'Luke', chapters: 24 },
-        { name: 'John', chapters: 21 }, { name: 'Acts', chapters: 28 }, { name: 'Romans', chapters: 16 },
-        { name: '1 Corinthians', chapters: 16 }, { name: '2 Corinthians', chapters: 13 }, { name: 'Galatians', chapters: 6 },
-        { name: 'Ephesians', chapters: 6 }, { name: 'Philippians', chapters: 4 }, { name: 'Colossians', chapters: 4 },
-        { name: '1 Thessalonians', chapters: 5 }, { name: '2 Thessalonians', chapters: 3 }, { name: '1 Timothy', chapters: 6 },
-        { name: '2 Timothy', chapters: 4 }, { name: 'Titus', chapters: 3 }, { name: 'Philemon', chapters: 1 },
-        { name: 'Hebrews', chapters: 13 }, { name: 'James', chapters: 5 }, { name: '1 Peter', chapters: 5 },
-        { name: '2 Peter', chapters: 3 }, { name: '1 John', chapters: 5 }, { name: '2 John', chapters: 1 },
-        { name: '3 John', chapters: 1 }, { name: 'Jude', chapters: 1 }, { name: 'Revelation', chapters: 22 }
-    ];
-
-    let oldTestament = [];
-    let newTestament = [];
-
-    const highlightColors = {
-        yellow: 'rgba(251, 191, 36, 0.4)', green: 'rgba(34, 197, 94, 0.4)', blue: 'rgba(59, 130, 246, 0.4)',
-        purple: 'rgba(168, 85, 247, 0.4)', pink: 'rgba(236, 72, 153, 0.4)', red: 'rgba(239, 68, 68, 0.4)',
-        orange: 'rgba(249, 115, 22, 0.4)', teal: 'rgba(20, 184, 166, 0.4)', cyan: 'rgba(6, 182, 212, 0.4)',
-        lime: 'rgba(132, 204, 22, 0.4)'
-    };
-
-    // Translation code -> field in universalBookMap.json holding the book's name in that language.
-    const localizedNameField = { JPKJV: 'japanese', CUV: 'cuv', BTX3: 'rvr', VULG: 'vul' };
-
-    const chevron = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
-
-    window.onload = async function() {
-        showLoading();
-        await loadBookMap();
-        initializeBookData();
-        loadNotes();
-        loadHighlights();
-        updateHighlightsCount();
-        hideLoading();
-    };
-
-    // DATA SETUP ===================================================
-
-    async function loadBookMap() {
-        try {
-            const response = await fetch('universalBookMap.json');
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            state.bookMap = await response.json();
-        } catch (e) {
-            // Not fatal: books still work, just without Hebrew/Greek/localized names.
-            console.warn('Could not load universalBookMap.json; continuing without book name translations.', e);
-            state.bookMap = null;
-        }
-    }
-
-    // Build the book lists. IDs come from the book's position, so this works even if the map failed to load.
-    function initializeBookData() {
-        const mapEntries = state.bookMap || {};
-        const build = (base, offset) => base.map((book, i) => {
-            const id = String(offset + i + 1);
-            const mapData = mapEntries[id] || {};
-            return { ...mapData, id, canonical: book.name, chapters: book.chapters };
-        });
-        oldTestament = build(oldTestamentBase, 0);
-        newTestament = build(newTestamentBase, oldTestamentBase.length);
-    }
-
-    // HELPERS ======================================================
-
-    function showLoading() { document.getElementById('loading').classList.remove('hidden'); }
-    function hideLoading() { document.getElementById('loading').classList.add('hidden'); }
-
-    function escapeHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
-    // Turn API HTML into plain text: drop Strong's numbers (<S>) and footnotes (<sup>), strip all other tags.
-    function toPlainText(html) {
-        const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
-        doc.querySelectorAll('s, sup').forEach(el => el.remove());
-        return doc.body.textContent.replace(/\s+/g, ' ').trim();
-    }
-
-    function originalNameFor(book, testament) {
-        return testament === 'Old Testament' ? book.wlc : book.tr;
-    }
-
-    function verseKeyFor(verseNum) {
-        return `${state.selectedBook.canonical}-${state.selectedChapter}-${verseNum}`;
-    }
-
-    // Split "Book Name-Chapter-Verse" (book names may contain spaces or hyphens).
-    function parseVerseKey(key) {
-        const parts = key.split('-');
-        const verse = parts.pop();
-        const chapter = parts.pop();
-        return { book: parts.join('-'), chapter, verse };
-    }
-
-    // API ==========================================================
-
-    async function fetchVerses(bookId, chapter, version) {
-        const cacheKey = `${bookId}-${chapter}-${version}`;
-        if (state.versesCache[cacheKey]) return state.versesCache[cacheKey];
-
-        try {
-            // 'original-ot' / 'original-nt' request the Hebrew (WLC) / Greek (TR) text.
-            const query = version.startsWith('original-')
-                ? `type=original&testament=${version.slice('original-'.length)}`
-                : `version=${encodeURIComponent(version)}`;
-            const url = `/.netlify/functions/bible-proxy?book=${bookId}&chapter=${chapter}&${query}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`API Error: ${response.status}`);
-            const data = await response.json();
-            if (!data || !Array.isArray(data.verses) || data.verses.length === 0) return null;
-            state.versesCache[cacheKey] = data.verses;
-            return data.verses;
-        } catch (error) {
-            console.error('API Error:', error);
-            return null;
-        }
-    }
-
-    function fetchOriginalLanguage(bookId, chapter, testament) {
-        return fetchVerses(bookId, chapter, testament === 'Old Testament' ? 'original-ot' : 'original-nt');
-    }
-
-    // RENDERING ====================================================
-
-    function updateBreadcrumb() {
-        const breadcrumb = document.getElementById('breadcrumb');
-        let html = '';
-
-        if (state.selectedTestament) {
-            html += `<span class="text-amber-400">${state.selectedTestament}</span>`;
-            if (state.selectedBook) {
-                const book = state.selectedBook;
-                const originalName = originalNameFor(book, state.selectedTestament);
-                const localField = state.selectedChapter ? localizedNameField[state.selectedTranslation] : null;
-                const localName = localField ? book[localField] : null;
-
-                const extras = [originalName, localName].filter(Boolean).map(escapeHtml);
-                const displayName = extras.length
-                    ? `${escapeHtml(book.canonical)} <span class="text-slate-400 font-serif">(${extras.join(' · ')})</span>`
-                    : escapeHtml(book.canonical);
-
-                html += chevron + `<span class="text-amber-400">${displayName}</span>`;
-
-                if (state.selectedChapter) {
-                    html += chevron + `<span class="text-amber-400">Chapter ${state.selectedChapter}</span>`;
-                }
-            }
-        }
-        breadcrumb.innerHTML = html;
-    }
-
-    async function renderVerses() {
-        const contentArea = document.getElementById('content-area');
-        updateBreadcrumb();
-        showLoading();
-
-        const [verses, originalVerses] = await Promise.all([
-            fetchVerses(state.selectedBook.id, state.selectedChapter, state.selectedTranslation),
-            fetchOriginalLanguage(state.selectedBook.id, state.selectedChapter, state.selectedTestament)
-        ]);
-
-        hideLoading();
-
-        if (!verses) {
-            contentArea.innerHTML = `<div class="bg-slate-700/30 border border-slate-600/50 rounded-lg p-8 text-center text-slate-400"><p>Unable to load verses.</p></div>`;
-            return;
-        }
-
-        // Match original-language lines by verse number, not array position.
-        const originalByVerse = {};
-        (originalVerses || []).forEach(v => { originalByVerse[v.verse] = toPlainText(v.text); });
-
-        const isOT = state.selectedTestament === 'Old Testament';
-        state.currentVerses = {};
-
-        contentArea.innerHTML = `
-            <div class="bg-slate-900/50 border border-slate-800/50 rounded-lg p-8 text-slate-200 leading-relaxed text-lg shadow-xl">
-                ${verses.map(verse => {
-                    const text = toPlainText(verse.text);
-                    state.currentVerses[verse.verse] = text;
-
-                    const verseKey = verseKeyFor(verse.verse);
-                    const hasNotes = state.notes[verseKey];
-                    const highlight = state.highlights[verseKey];
-                    const highlightStyle = highlight ? `background-color: ${highlightColors[highlight]}; padding: 2px 4px; border-radius: 3px;` : '';
-                    const originalText = originalByVerse[verse.verse] || '';
-
-                    return `
-                        <div class="verse-wrapper">
-                            <sup class="verse-number">${verse.verse}</sup>
-                            <span class="verse-content ${highlight ? 'verse-highlighted' : ''}" style="${highlightStyle}" data-verse="${verse.verse}">${escapeHtml(text)}</span>
-                            <span class="verse-actions">
-                                <button onclick="openHighlightModal(${verse.verse})" class="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-slate-700/50 ${highlight ? 'text-amber-400' : 'text-slate-500 hover:text-amber-400'}">
-                                    <svg class="w-3.5 h-3.5" fill="${highlight ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-                                    </svg>
-                                </button>
-                                <button onclick="openNotesModal(${verse.verse})" class="inline-flex items-center justify-center w-5 h-5 rounded hover:bg-slate-700/50 ${hasNotes ? 'text-amber-400' : 'text-slate-500 hover:text-amber-400'}">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                                    </svg>
-                                </button>
-                            </span>
-                            ${originalText ? `
-                                <div class="mt-2 ml-6 text-base text-slate-400 italic border-l-2 border-slate-700 pl-3">
-                                    <span class="text-xs text-amber-400 font-semibold">${isOT ? 'Hebrew' : 'Greek'}:</span>
-                                    <span class="font-serif" dir="${isOT ? 'rtl' : 'ltr'}">${escapeHtml(originalText)}</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
-    }
-
-    function renderBooks() {
-        const grid = document.getElementById('books-grid');
-        const books = state.selectedTestament === 'Old Testament' ? oldTestament : newTestament;
-
-        grid.innerHTML = books.map((book, index) => `
-            <button onclick="selectBook(${index})" class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-4 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50">
-                <div class="font-semibold">${escapeHtml(book.canonical)}</div>
-                <div class="text-xs text-amber-500/80 mt-1 font-serif">${escapeHtml(originalNameFor(book, state.selectedTestament) || '')}</div>
-                <div class="text-sm text-slate-400 mt-2">${book.chapters} chapters</div>
-            </button>
-        `).join('');
-    }
-
-    function renderChapters() {
-        const grid = document.getElementById('chapters-grid');
-        const chapters = Array.from({ length: state.selectedBook.chapters }, (_, i) => i + 1);
-        grid.innerHTML = chapters.map(chapter => `
-            <button onclick="selectChapter(${chapter})" class="bg-slate-700/50 hover:bg-slate-600/50 text-white p-3 rounded-lg shadow transition-all border border-slate-600/50 hover:border-amber-500/50 font-semibold">
-                ${chapter}
-            </button>
-        `).join('');
-    }
-
-    // NAVIGATION ===================================================
-
-    function selectTestament(testament) {
-        state.selectedTestament = testament;
-        document.getElementById('testament-selection').classList.add('hidden');
-        document.getElementById('book-selection').classList.remove('hidden');
-        updateBreadcrumb();
-        renderBooks();
-    }
-
-    function selectBook(index) {
-        const books = state.selectedTestament === 'Old Testament' ? oldTestament : newTestament;
-        state.selectedBook = books[index];
-        document.getElementById('book-selection').classList.add('hidden');
-        document.getElementById('chapter-selection').classList.remove('hidden');
-        updateBreadcrumb();
-        renderChapters();
-    }
-
-    function selectChapter(chapter) {
-        state.selectedChapter = chapter;
-        state.selectedVerse = null;
-        document.getElementById('chapter-selection').classList.add('hidden');
-        document.getElementById('chapter-view').classList.remove('hidden');
-        document.getElementById('translation-select').value = state.selectedTranslation;
-        renderVerses();
-    }
-
-    function goBackToTestament() {
-        state.selectedTestament = null;
-        state.selectedBook = null;
-        document.getElementById('book-selection').classList.add('hidden');
-        document.getElementById('testament-selection').classList.remove('hidden');
-        updateBreadcrumb();
-    }
-
-    function goBackToBooks() {
-        state.selectedBook = null;
-        state.selectedChapter = null;
-        document.getElementById('chapter-selection').classList.add('hidden');
-        document.getElementById('book-selection').classList.remove('hidden');
-        updateBreadcrumb();
-    }
-
-    function goBackToChapters() {
-        state.selectedChapter = null;
-        state.selectedVerse = null;
-        document.getElementById('chapter-view').classList.add('hidden');
-        document.getElementById('chapter-selection').classList.remove('hidden');
-        updateBreadcrumb();
-    }
-
-    function changeTranslation() {
-        state.selectedTranslation = document.getElementById('translation-select').value;
-        renderVerses();
-    }
-
-    // STORAGE ======================================================
-
-    function readStorage(key) {
-        try {
-            const saved = localStorage.getItem(key);
-            return saved ? JSON.parse(saved) : {};
-        } catch (e) {
-            console.warn(`Could not read ${key} from localStorage`, e);
-            return {};
-        }
-    }
-
-    function writeStorage(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {
-            console.warn(`Could not save ${key} to localStorage`, e);
-        }
-    }
-
-    function loadNotes() { state.notes = readStorage('bible-notes'); }
-    function saveNotesToStorage() { writeStorage('bible-notes', state.notes); }
-    function loadHighlights() { state.highlights = readStorage('bible-highlights'); }
-    function saveHighlights() { writeStorage('bible-highlights', state.highlights); }
-
-    // NOTES ========================================================
-
-    function openNotesModal(verseNum) {
-        state.selectedVerse = verseNum;
-        const verseKey = verseKeyFor(verseNum);
-        document.getElementById('notes-verse-title').textContent = `Notes - ${state.selectedBook.canonical} ${state.selectedChapter}:${verseNum}`;
-        document.getElementById('notes-verse-text').textContent = state.currentVerses[verseNum] || '';
-        document.getElementById('note-textarea').value = state.notes[verseKey] || '';
-        document.getElementById('notes-modal').classList.remove('hidden');
-    }
-
-    function closeNotesModal() {
-        document.getElementById('notes-modal').classList.add('hidden');
-        state.selectedVerse = null;
-    }
-
-    function saveNote() {
-        const verseKey = verseKeyFor(state.selectedVerse);
-        const value = document.getElementById('note-textarea').value;
-        if (value.trim()) state.notes[verseKey] = value;
-        else delete state.notes[verseKey];
-        saveNotesToStorage();
-        closeNotesModal();
-        renderVerses();
-    }
-
-    // HIGHLIGHTS ===================================================
-
-    function openHighlightModal(verseNum) {
-        state.highlightingVerse = verseNum;
-        document.getElementById('highlight-modal').classList.remove('hidden');
-    }
-
-    function closeHighlightModal() {
-        document.getElementById('highlight-modal').classList.add('hidden');
-        state.highlightingVerse = null;
-    }
-
-    function selectHighlight(color) {
-        if (!state.highlightingVerse) return;
-        const verseKey = verseKeyFor(state.highlightingVerse);
-        if (state.highlights[verseKey] === color) delete state.highlights[verseKey];
-        else state.highlights[verseKey] = color;
-        saveHighlights();
-        updateHighlightsCount();
-        closeHighlightModal();
-        renderVerses();
-    }
-
-    function updateHighlightsCount() {
-        document.getElementById('highlights-count').textContent = Object.keys(state.highlights).length;
-    }
-
-    function toggleHighlightsPanel() {
-        const panel = document.getElementById('highlights-panel');
-        if (panel.classList.contains('hidden')) { panel.classList.remove('hidden'); renderHighlightsPanel(); }
-        else { panel.classList.add('hidden'); }
-    }
-
-    function renderHighlightsPanel() {
-        const content = document.getElementById('highlights-content');
-        const highlights = Object.entries(state.highlights);
-        if (highlights.length === 0) {
-            content.innerHTML = '<div class="text-slate-400 text-center py-8">No highlighted verses yet</div>';
-            return;
-        }
-
-        const grouped = {};
-        highlights.forEach(([key, color]) => {
-            const { book, chapter, verse } = parseVerseKey(key);
-            const bookChapter = `${book} ${chapter}`;
-            if (!grouped[bookChapter]) grouped[bookChapter] = [];
-            grouped[bookChapter].push({ verse, color, key });
-        });
-
-        // Keys are passed via data attributes so book names never break the inline JS.
-        content.innerHTML = Object.entries(grouped).map(([bookChapter, verses]) => `
-            <div class="mb-4">
-                <h4 class="font-bold text-slate-300 mb-2">${escapeHtml(bookChapter)}</h4>
-                <div class="space-y-2">
-                    ${verses.map(v => `
-                        <div class="flex items-center gap-2 group">
-                            <div class="w-3 h-3 rounded flex-shrink-0" style="background-color: ${highlightColors[v.color] || 'transparent'}"></div>
-                            <button data-key="${escapeHtml(v.key)}" onclick="goToVerse(this.dataset.key)" class="flex-1 text-left text-sm text-slate-300 hover:text-white transition-colors">
-                                Verse ${escapeHtml(v.verse)}
-                            </button>
-                            <button data-key="${escapeHtml(v.key)}" onclick="removeHighlight(this.dataset.key)" class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function removeHighlight(verseKey) {
-        delete state.highlights[verseKey];
-        saveHighlights();
-        updateHighlightsCount();
-        renderHighlightsPanel();
-        if (state.selectedBook && state.selectedChapter) renderVerses();
-    }
-
-    function goToVerse(verseKey) {
-        const { book: bookName, chapter, verse } = parseVerseKey(verseKey);
-        const otBook = oldTestament.find(b => b.canonical === bookName);
-        const book = otBook || newTestament.find(b => b.canonical === bookName);
-        if (!book) return;
-
-        state.selectedTestament = otBook ? 'Old Testament' : 'New Testament';
-        state.selectedBook = book;
-        state.selectedChapter = parseInt(chapter, 10);
-
-        document.getElementById('testament-selection').classList.add('hidden');
-        document.getElementById('book-selection').classList.add('hidden');
-        document.getElementById('chapter-selection').classList.add('hidden');
-        document.getElementById('chapter-view').classList.remove('hidden');
-        document.getElementById('translation-select').value = state.selectedTranslation;
-        toggleHighlightsPanel();
-
-        // Pre-render the book and chapter grids so the "Back" buttons land on the right lists.
-        renderBooks();
-        renderChapters();
-
-        renderVerses().then(() => {
-            setTimeout(() => {
-                const verseElement = document.querySelector(`[data-verse="${CSS.escape(verse)}"]`);
-                if (verseElement) {
-                    verseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    verseElement.style.transition = 'all 0.3s';
-                    verseElement.style.transform = 'scale(1.05)';
-                    setTimeout(() => { verseElement.style.transform = 'scale(1)'; }, 300);
-                }
-            }, 100);
-        });
-    }
-
-    // MODAL CLOSING ================================================
-
-    document.getElementById('notes-modal').addEventListener('click', function(e) { if (e.target === this) closeNotesModal(); });
-    document.getElementById('highlight-modal').addEventListener('click', function(e) { if (e.target === this) closeHighlightModal(); });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeNotesModal();
-            closeHighlightModal();
-            if (!document.getElementById('highlights-panel').classList.contains('hidden')) toggleHighlightsPanel();
-        }
-    });
-</script>
+            <div class="chapter-nav max-w-4xl mx-auto mt-4"></div>
+        </section>
+
+        <!-- Search -->
+        <section id="view-search" class="view hidden max-w-4xl mx-auto">
+            <form id="search-page-form" class="flex flex-wrap gap-2 mb-4">
+                <input id="search-page-input" type="search" placeholder="Words or a phrase..." class="flex-1 min-w-[12rem] bg-slate-800/70 border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500">
+                <select id="search-translation" class="select"></select>
+                <button class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium">Search</button>
+            </form>
+            <div id="search-results"></div>
+        </section>
+
+        <!-- Reading Plans -->
+        <section id="view-plans" class="view hidden max-w-4xl mx-auto">
+            <div id="plans-content"></div>
+        </section>
+    </main>
+
+    <script src="js/data.js"></script>
+    <script src="js/text.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

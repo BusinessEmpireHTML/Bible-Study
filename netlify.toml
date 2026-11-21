@@ -1,2 +1,8 @@
 [build]
   functions = "netlify/functions"
+
+# Always check for a new service worker so app updates reach installed users.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
